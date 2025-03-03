@@ -41,20 +41,31 @@ public class Main extends ApplicationAdapter {
     // Box2D位置迭代次数
     private int positionIterations = 2;
 
-    // Player（玩家）
-    private Body playerBody;  // 角色的Box2D Body，用于物理模拟
-    private Texture playerTexture; // 角色的纹理（精灵表）
-    private Animation<TextureRegion> playerIdleAnimation; // 角色站立时的动画
-    private Animation<TextureRegion> playerWalkAnimation; // 角色行走时的动画
-    private Animation<TextureRegion> playerRunAnimation;  // 角色跑步时的动画
-    private float playerStateTime = 0f; // 角色动画状态时间，用于控制动画播放
-    private String currentAnimation = "idle"; // 当前角色动画状态（idle, walk, run）
-    private float playerSpeed = 2f; // 角色行走速度（米/秒）
-    private float playerRunSpeed = 5f; // 角色跑步速度（米/秒）
+    // Player1（玩家 猫猫）
+    private Body playerBody;// 角色的Box2D Body，用于物理模拟
+    private Texture playerTexture;// 角色的纹理（精灵表）
+    private Animation<TextureRegion> playerIdleAnimation;// 角色站立时的动画
+    private Animation<TextureRegion> playerWalkAnimation;// 角色行走时的动画
+    private Animation<TextureRegion> playerRunAnimation;// 角色跑步时的动画
+
+
+    // Player2(玩家 武士？)-----------------------------------------
+    private Texture samuraiTexture;
+    private Animation<TextureRegion> samuraiWalkDownAnimation;// 向下走动画
+    private Animation<TextureRegion> samuraiWalkUpAnimation;// 向上走动画
+    private Animation<TextureRegion> samuraiWalkSideAnimation;// 左右走动画
+    private Animation<TextureRegion> samuraiIdleAnimation;// 站立动画
+
+    private float playerStateTime = 0f;// 角色动画状态时间，用于控制动画播放
+    private String currentAnimation = "idle";// 当前角色动画状态（idle, walk, run）
+    private float playerSpeed = 2f;// 角色行走速度（米/秒）
+    private float playerRunSpeed = 5f;// 角色跑步速度（米/秒）
+
+    private boolean isPlayer1Active = true;// 角色开关，true为猫，false为武士
 
     // Background（背景）
-    private Array<Body> groundBodies = new Array<>(); // 地面的Box2D Body数组
-    private int groundCount = 10; // 地面块的数量
+    private Array<Body> groundBodies = new Array<>();// 地面的Box2D Body数组
+    private int groundCount = 10;// 地面块的数量
 
     private Texture image;
     private Music music;
@@ -67,7 +78,7 @@ public class Main extends ApplicationAdapter {
         camera.setToOrtho(false, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
 
         // Box2D创建设定
-        world = new World(new Vector2(0, 0), true); //无重力
+        world = new World(new Vector2(0, 0), true);//无重力
         debugRenderer = new Box2DDebugRenderer();
 
         createPlayer();
@@ -115,8 +126,8 @@ public class Main extends ApplicationAdapter {
 
         // 定义角色
         BodyDef bodyDef = new BodyDef();
-        bodyDef.type = BodyDef.BodyType.DynamicBody; // 设置Body类型为动态，可以移动
-        bodyDef.position.set(VIEWPORT_WIDTH / 2 / PIXELS_PER_METER, VIEWPORT_HEIGHT / 2 / PIXELS_PER_METER); // 设置Body初始位置
+        bodyDef.type = BodyDef.BodyType.DynamicBody;// 设置Body类型为动态，可以移动
+        bodyDef.position.set(VIEWPORT_WIDTH / 2 / PIXELS_PER_METER, VIEWPORT_HEIGHT / 2 / PIXELS_PER_METER);// 设置Body初始位置
 
         // 在Box2D物理世界中创建Body
         playerBody = world.createBody(bodyDef);
@@ -248,9 +259,9 @@ public class Main extends ApplicationAdapter {
             vertex0.setZero();
             vertex1.setZero();
 
-            Texture groundTexture = new Texture(Gdx.files.internal("ground.png")); // 加载地面纹理
+            Texture groundTexture = new Texture(Gdx.files.internal("ground.png"));// 加载地面纹理
 
-            batch.draw(groundTexture, x - width / 2, y - height / 2, width, height); // 绘制地面纹理
+            batch.draw(groundTexture, x - width / 2, y - height / 2, width, height);// 绘制地面纹理
         }
 
         // 绘制角色
