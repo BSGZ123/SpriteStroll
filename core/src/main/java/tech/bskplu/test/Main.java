@@ -82,6 +82,7 @@ public class Main extends ApplicationAdapter {
         debugRenderer = new Box2DDebugRenderer();
 
         createPlayer();
+        createSamurai();
         createGround();
 
         image = new Texture("WhiteFoxSex.png");
@@ -89,7 +90,7 @@ public class Main extends ApplicationAdapter {
     }
 
     /**
-     *  创建角色对象，包括加载纹理、创建动画、创建 Box2D Body 和 Fixture
+     *  创建猫猫角色对象，包括加载纹理、创建动画、创建Box2D Body和Fixture
      */
     private void createPlayer() {
 
@@ -147,7 +148,29 @@ public class Main extends ApplicationAdapter {
     }
 
     /**
-     *  创建地面对象，包括创建 Box2D Body 和 Fixture
+     * 创建武士角色对象，包括加载纹理、创建动画、创建Box2D Body和Fixture
+     */
+    private void createSamurai(){
+        samuraiTexture=new Texture(Gdx.files.internal("Samurai_SpriteSheet.png"));
+        int frameWidth = samuraiTexture.getWidth();// 动作帧宽度
+        int frameHeight = samuraiTexture.getHeight() / 11;// 动作帧高度
+
+        // 根据动作帧的宽高进行裁剪分割
+        TextureRegion[][] tmp=TextureRegion.split(samuraiTexture,frameWidth,frameHeight);
+
+        // 向下走 动作帧组
+        TextureRegion[] walkDownFrames = new TextureRegion[2];
+        walkDownFrames[0] = tmp[0][0];
+        walkDownFrames[1] = tmp[0][1];
+
+        // 向上走 动作帧组
+        TextureRegion[] walkUpFrames = new TextureRegion[2];
+        walkUpFrames[0] = tmp[0][2];
+        walkUpFrames[1] = tmp[0][3];
+    }
+
+    /**
+     *  创建地面对象，包括创建Box2D Body和Fixture
      */
     private void createGround() {
         Random random = new Random();
