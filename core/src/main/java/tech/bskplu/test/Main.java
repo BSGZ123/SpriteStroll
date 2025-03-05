@@ -167,6 +167,25 @@ public class Main extends ApplicationAdapter {
         TextureRegion[] walkUpFrames = new TextureRegion[2];
         walkUpFrames[0] = tmp[0][2];
         walkUpFrames[1] = tmp[0][3];
+
+        // 向左向右 动作帧组
+        TextureRegion[] walkSideFrames = new TextureRegion[2];
+        walkSideFrames[0] = tmp[0][4];
+        walkSideFrames[1] = tmp[0][5];
+
+        // 待机状态 动作帧组
+        TextureRegion[] idleFrames = new TextureRegion[3];
+        idleFrames[0] = tmp[0][6];
+        idleFrames[1] = tmp[0][7];
+        idleFrames[2] = tmp[0][8];
+
+        // 创建动画
+        samuraiWalkDownAnimation = new Animation<>(0.2f, walkDownFrames);
+        samuraiWalkUpAnimation = new Animation<>(0.2f, walkUpFrames);
+        samuraiWalkSideAnimation = new Animation<>(0.2f, walkSideFrames);
+        samuraiIdleAnimation = new Animation<>(0.2f, idleFrames);
+
+
     }
 
     /**
