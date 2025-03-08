@@ -13,7 +13,9 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.reflect.Annotation;
 
+import java.util.Arrays;
 import java.util.Random;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
@@ -41,7 +43,7 @@ public class Main extends ApplicationAdapter {
     // Box2D位置迭代次数
     private int positionIterations = 2;
 
-    // Player1（玩家 猫猫）
+    // Player1（玩家 猫猫）-----------------------------------------------------
     private Body playerBody;// 角色的Box2D Body，用于物理模拟
     private Texture playerTexture;// 角色的纹理（精灵表）
     private Animation<TextureRegion> playerIdleAnimation;// 角色站立时的动画
@@ -56,6 +58,7 @@ public class Main extends ApplicationAdapter {
     private Animation<TextureRegion> samuraiWalkSideAnimation;// 左右走动画
     private Animation<TextureRegion> samuraiIdleAnimation;// 站立动画
 
+    //----------------------------------------------------------
     private float playerStateTime = 0f;// 角色动画状态时间，用于控制动画播放
     private String currentAnimation = "idle";// 当前角色动画状态（idle, walk, run）
     private float playerSpeed = 2f;// 角色行走速度（米/秒）
@@ -121,9 +124,9 @@ public class Main extends ApplicationAdapter {
         playerRunAnimation = new Animation<>(0.05f, runFrames);
 
         // 设置动作动画循环播放
-        playerIdleAnimation.setPlayMode(Animation.PlayMode.LOOP);
-        playerWalkAnimation.setPlayMode(Animation.PlayMode.LOOP);
-        playerRunAnimation.setPlayMode(Animation.PlayMode.LOOP);
+        for (Animation<TextureRegion> textureRegionAnimation : Arrays.asList(playerIdleAnimation, playerWalkAnimation, playerRunAnimation)) {
+            textureRegionAnimation.setPlayMode(Animation.PlayMode.LOOP);
+        }
 
         // 定义角色
         BodyDef bodyDef = new BodyDef();
@@ -161,29 +164,62 @@ public class Main extends ApplicationAdapter {
         // 向下走 动作帧组
         TextureRegion[] walkDownFrames = new TextureRegion[2];
         walkDownFrames[0] = tmp[0][0];
-        walkDownFrames[1] = tmp[0][1];
+        walkDownFrames[1] = tmp[1][0];
 
         // 向上走 动作帧组
         TextureRegion[] walkUpFrames = new TextureRegion[2];
-        walkUpFrames[0] = tmp[0][2];
-        walkUpFrames[1] = tmp[0][3];
+        walkUpFrames[0] = tmp[2][0];
+        walkUpFrames[1] = tmp[3][0];
 
         // 向左向右 动作帧组
         TextureRegion[] walkSideFrames = new TextureRegion[2];
-        walkSideFrames[0] = tmp[0][4];
-        walkSideFrames[1] = tmp[0][5];
+        walkSideFrames[0] = tmp[4][0];
+        walkSideFrames[1] = tmp[5][0];
 
         // 待机状态 动作帧组
         TextureRegion[] idleFrames = new TextureRegion[3];
-        idleFrames[0] = tmp[0][6];
-        idleFrames[1] = tmp[0][7];
-        idleFrames[2] = tmp[0][8];
+        idleFrames[0] = tmp[6][0];
+        idleFrames[1] = tmp[7][0];
+        idleFrames[2] = tmp[8][0];
 
         // 创建动画
         samuraiWalkDownAnimation = new Animation<>(0.2f, walkDownFrames);
         samuraiWalkUpAnimation = new Animation<>(0.2f, walkUpFrames);
         samuraiWalkSideAnimation = new Animation<>(0.2f, walkSideFrames);
         samuraiIdleAnimation = new Animation<>(0.2f, idleFrames);
+
+        // 动作动画循环播放
+        for (Animation<TextureRegion> textureRegionAnimation : Arrays.asList(samuraiWalkDownAnimation, samuraiWalkUpAnimation, samuraiWalkSideAnimation,samuraiIdleAnimation)) {
+            textureRegionAnimation.setPlayMode(Animation.PlayMode.LOOP);
+        }
+
+        // 设置角色定义
+        BodyDef bodyDef =new BodyDef();
+        bodyDef.type = BodyDef.BodyType.DynamicBody;
+        bodyDef.position.set(VIEWPORT_WIDTH / 2 / PIXELS_PER_METER, VIEWPORT_HEIGHT / 2 / PIXELS_PER_METER);// 设置角色初始位置
+
+        // 判断角色是否存在
+        if (playerBody == null) {
+            playerBody = world.createBody(bodyDef);
+        } else {
+            playerBody.setType(BodyDef.BodyType.DynamicBody);
+        }
+
+        CircleShape circleShape = new CircleShape();
+        circleShape.setRadius(16f / PIXELS_PER_METER);
+
+        FixtureDef fixtureDef = new FixtureDef();
+        fixtureDef.shape = circleShape;
+        fixtureDef.density = 1f;
+        fixtureDef.friction = 0.4f;
+        fixtureDef.restitution = 0.1f;
+
+        if (playerBody.getFixtureList().size > 0) {
+            playerBody.destroyFixture(playerBody.getFixtureList().get(0));
+        }
+
+        playerBody.createFixture(fixtureDef).setUserData("Samurai");
+        circleShape.dispose();
 
 
     }
@@ -217,6 +253,7 @@ public class Main extends ApplicationAdapter {
         }
     }
 
+
     /**
      * 处理用户输入，控制角色的移动和动画
      */
@@ -224,32 +261,56 @@ public class Main extends ApplicationAdapter {
         Vector2 velocity = new Vector2(0, 0);
         float speed = playerSpeed;
 
-        // 按下shift 设置速度为跑步速度
-        if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)) {
-            speed = playerRunSpeed;
+        if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)) {
+            isPlayer1Active = !isPlayer1Active;
         }
 
-        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-            velocity.y = speed;
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-            velocity.y = -speed;
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-            velocity.x = -speed;
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-            velocity.x = speed;
-        }
+        if (isPlayer1Active) {
+            // 按下shift 设置速度为跑步速度 猫猫
+            if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)) {
+                speed = playerRunSpeed;
+            }
 
-        // 速度为零，切换站立状态
-        if (velocity.isZero()) {
-            currentAnimation = "idle";
-        } else if (speed == playerSpeed) {
-            currentAnimation = "walk";
-        } else {
-            currentAnimation = "run";
-        }
+            if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+                velocity.y = speed;
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+                velocity.y = -speed;
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+                velocity.x = -speed;
+            }
+            if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+                velocity.x = speed;
+            }
+
+            // 速度为零，切换站立状态
+            if (velocity.isZero()) {
+                currentAnimation = "idle";
+            } else if (speed == playerSpeed) {
+                currentAnimation = "walk";
+            } else {
+                currentAnimation = "run";
+            }
+        } else// 武士
+         {
+            if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+                velocity.y = speed;
+                currentAnimation = "walk_up";
+            } else if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+                velocity.y = -speed;
+                currentAnimation = "walk_down";
+            } else if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+                velocity.x = -speed;
+                currentAnimation = "walk_side";
+            } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+                velocity.x = speed;
+                currentAnimation = "walk_side";
+            } else {
+                currentAnimation = "idle";
+            }
+         }
+
 
         playerBody.setLinearVelocity(velocity);
     }
@@ -265,11 +326,11 @@ public class Main extends ApplicationAdapter {
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        handleInput();
+        handleInput();// 处理玩家输入
 
-        world.step(timeStep, velocityIterations, positionIterations);
+        world.step(timeStep, velocityIterations, positionIterations);// 更新物理世界
 
-        playerStateTime += Gdx.graphics.getDeltaTime();
+        playerStateTime += Gdx.graphics.getDeltaTime();// 更新玩家动画状态时间
 
         // 设置相机位置跟随角色
         camera.position.set(playerBody.getPosition().x * PIXELS_PER_METER, playerBody.getPosition().y * PIXELS_PER_METER, 0);
@@ -326,14 +387,22 @@ public class Main extends ApplicationAdapter {
      * @return 当前动画帧
      */
     private TextureRegion getCurrentFrame(float stateTime) {
-        return switch (currentAnimation) {
-            case "walk" -> playerWalkAnimation.getKeyFrame(stateTime, true);
-            case "run" -> playerRunAnimation.getKeyFrame(stateTime, true);
-            default -> playerIdleAnimation.getKeyFrame(stateTime, true);
-        };
-
-
-
+        if (isPlayer1Active) {
+            // 猫猫
+            return switch (currentAnimation) { // 根据当前动画状态选择动画
+                case "walk" -> playerWalkAnimation.getKeyFrame(stateTime, true); // 返回行走动画的当前帧
+                case "run" -> playerRunAnimation.getKeyFrame(stateTime, true); // 返回跑步动画的当前帧
+                default -> playerIdleAnimation.getKeyFrame(stateTime, true); // 返回站立动画的当前帧
+            };
+        } else {
+            // 武士
+            return switch (currentAnimation) {
+                case "walk_down" -> samuraiWalkDownAnimation.getKeyFrame(stateTime, true);
+                case "walk_up" -> samuraiWalkUpAnimation.getKeyFrame(stateTime, true);
+                case "walk_side" -> samuraiWalkSideAnimation.getKeyFrame(stateTime, true);
+                default -> samuraiIdleAnimation.getKeyFrame(stateTime, true);
+            };
+        }
     }
 
     @Override
