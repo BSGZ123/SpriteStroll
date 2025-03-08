@@ -13,7 +13,6 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.reflect.Annotation;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -55,7 +54,8 @@ public class Main extends ApplicationAdapter {
     private Texture samuraiTexture;
     private Animation<TextureRegion> samuraiWalkDownAnimation;// 向下走动画
     private Animation<TextureRegion> samuraiWalkUpAnimation;// 向上走动画
-    private Animation<TextureRegion> samuraiWalkSideAnimation;// 左右走动画
+    private Animation<TextureRegion> samuraiWalkLeftAnimation;// 向左走动画
+    private Animation<TextureRegion> samuraiWalkRightAnimation;// 向右走动画
     private Animation<TextureRegion> samuraiIdleAnimation;// 站立动画
 
     //----------------------------------------------------------
@@ -171,10 +171,28 @@ public class Main extends ApplicationAdapter {
         walkUpFrames[0] = tmp[2][0];
         walkUpFrames[1] = tmp[3][0];
 
-        // 向左向右 动作帧组
-        TextureRegion[] walkSideFrames = new TextureRegion[2];
-        walkSideFrames[0] = tmp[4][0];
-        walkSideFrames[1] = tmp[5][0];
+        // 向左走 动作帧组
+        TextureRegion[] walkLeftFrames = new TextureRegion[2];
+        walkLeftFrames[0] = tmp[4][0];
+        walkLeftFrames[1] = tmp[5][0];
+
+//        // 水平翻转 向右走
+//        tmp[4][0].flip(true,false);
+//        tmp[5][0].flip(true,false);
+//
+//        // 向右走 动作帧组
+//        TextureRegion[] walkRightFrames = new TextureRegion[2];
+//        walkRightFrames[0] = tmp[4][0];
+//        walkRightFrames[1] = tmp[5][0];
+
+        // 创建向右走的帧副本并翻转
+        TextureRegion[] walkRightFrames = new TextureRegion[2];
+        // 创建新对象 避免共享引用
+        walkRightFrames[0] = new TextureRegion(tmp[4][0]);
+        walkRightFrames[1] = new TextureRegion(tmp[5][0]);
+        // 翻转副本
+        walkRightFrames[0].flip(true, false);
+        walkRightFrames[1].flip(true, false);
 
         // 待机状态 动作帧组
         TextureRegion[] idleFrames = new TextureRegion[3];
@@ -185,13 +203,15 @@ public class Main extends ApplicationAdapter {
         // 创建动画
         samuraiWalkDownAnimation = new Animation<>(0.2f, walkDownFrames);
         samuraiWalkUpAnimation = new Animation<>(0.2f, walkUpFrames);
-        samuraiWalkSideAnimation = new Animation<>(0.2f, walkSideFrames);
+        samuraiWalkLeftAnimation = new Animation<>(0.2f, walkLeftFrames);
+        samuraiWalkRightAnimation = new Animation<>(0.2f,walkRightFrames);
         samuraiIdleAnimation = new Animation<>(0.2f, idleFrames);
 
         // 动作动画循环播放
-        for (Animation<TextureRegion> textureRegionAnimation : Arrays.asList(samuraiWalkDownAnimation, samuraiWalkUpAnimation, samuraiWalkSideAnimation,samuraiIdleAnimation)) {
+        for (Animation<TextureRegion> textureRegionAnimation : Arrays.asList(samuraiWalkDownAnimation, samuraiWalkUpAnimation, samuraiWalkLeftAnimation,samuraiWalkRightAnimation,samuraiIdleAnimation)) {
             textureRegionAnimation.setPlayMode(Animation.PlayMode.LOOP);
         }
+
 
         // 设置角色定义
         BodyDef bodyDef =new BodyDef();
@@ -218,7 +238,7 @@ public class Main extends ApplicationAdapter {
             playerBody.destroyFixture(playerBody.getFixtureList().get(0));
         }
 
-        playerBody.createFixture(fixtureDef).setUserData("Samurai");
+        playerBody.createFixture(fixtureDef).setUserData("samurai");
         circleShape.dispose();
 
 
@@ -302,10 +322,12 @@ public class Main extends ApplicationAdapter {
                 currentAnimation = "walk_down";
             } else if (Gdx.input.isKeyPressed(Input.Keys.A)) {
                 velocity.x = -speed;
-                currentAnimation = "walk_side";
+                currentAnimation = "walk_left";
+                System.out.println("left "+currentAnimation);
             } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
                 velocity.x = speed;
-                currentAnimation = "walk_side";
+                currentAnimation = "walk_right";
+                System.out.println("right "+currentAnimation);
             } else {
                 currentAnimation = "idle";
             }
@@ -371,6 +393,7 @@ public class Main extends ApplicationAdapter {
         TextureRegion currentFrame = getCurrentFrame(playerStateTime);
         float x = playerBody.getPosition().x * PIXELS_PER_METER - currentFrame.getRegionWidth() / 2f;
         float y = playerBody.getPosition().y * PIXELS_PER_METER - currentFrame.getRegionHeight() / 2f;
+
         batch.draw(currentFrame, x, y);
 
         batch.end();
@@ -399,7 +422,8 @@ public class Main extends ApplicationAdapter {
             return switch (currentAnimation) {
                 case "walk_down" -> samuraiWalkDownAnimation.getKeyFrame(stateTime, true);
                 case "walk_up" -> samuraiWalkUpAnimation.getKeyFrame(stateTime, true);
-                case "walk_side" -> samuraiWalkSideAnimation.getKeyFrame(stateTime, true);
+                case "walk_left" -> samuraiWalkLeftAnimation.getKeyFrame(stateTime, true);
+                case "walk_right" -> samuraiWalkRightAnimation.getKeyFrame(stateTime, true);
                 default -> samuraiIdleAnimation.getKeyFrame(stateTime, true);
             };
         }
