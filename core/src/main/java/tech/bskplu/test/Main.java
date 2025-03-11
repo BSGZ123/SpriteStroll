@@ -17,7 +17,9 @@ import com.badlogic.gdx.utils.Array;
 import java.util.Arrays;
 import java.util.Random;
 
-/** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
+/**
+ * {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms.
+ */
 public class Main extends ApplicationAdapter {
 
     // 游戏视口宽度
@@ -51,6 +53,7 @@ public class Main extends ApplicationAdapter {
 
     // Player2（玩家 武士）
     private Texture samuraiTexture;
+    private Texture samuraiAttackTexture;// 新增攻击精灵表
     private Animation<TextureRegion> samuraiWalkDownAnimation;// 向下走动画
     private Animation<TextureRegion> samuraiWalkUpAnimation;// 向上走动画
     private Animation<TextureRegion> samuraiWalkLeftAnimation;// 向左走动画
@@ -59,6 +62,12 @@ public class Main extends ApplicationAdapter {
     private Animation<TextureRegion> samuraiIdleUpAnimation;// 向上站立动画
     private Animation<TextureRegion> samuraiIdleLeftAnimation;// 向左站立动画
     private Animation<TextureRegion> samuraiIdleRightAnimation;// 向右站立动画
+
+    // 新增攻击动画
+    private Animation<TextureRegion> samuraiAttackDownAnimation;
+    private Animation<TextureRegion> samuraiAttackUpAnimation;
+    private Animation<TextureRegion> samuraiAttackLeftAnimation;
+    private Animation<TextureRegion> samuraiAttackRightAnimation;
 
     // 角色状态
     private float playerStateTime = 0f;// 角色动画状态时间，用于控制动画播放
@@ -197,7 +206,7 @@ public class Main extends ApplicationAdapter {
         idleRightFrames[0] = new TextureRegion(tmp[8][0]);// 向右站立，通过翻转向左帧
         idleRightFrames[0].flip(true, false);
 
-        // 创建动画
+        // 创建行走动画
         samuraiWalkDownAnimation = new Animation<>(0.2f, walkDownFrames);
         samuraiWalkUpAnimation = new Animation<>(0.2f, walkUpFrames);
         samuraiWalkLeftAnimation = new Animation<>(0.2f, walkLeftFrames);
@@ -212,6 +221,45 @@ public class Main extends ApplicationAdapter {
             samuraiWalkDownAnimation, samuraiWalkUpAnimation, samuraiWalkLeftAnimation, samuraiWalkRightAnimation,
             samuraiIdleDownAnimation, samuraiIdleUpAnimation, samuraiIdleLeftAnimation, samuraiIdleRightAnimation)) {
             textureRegionAnimation.setPlayMode(Animation.PlayMode.LOOP);
+        }
+
+        // 新增攻击动画
+        samuraiAttackTexture = new Texture(Gdx.files.internal("SanGuoZhi2.png"));
+        int attackFrameWidth = samuraiAttackTexture.getWidth();
+        int attackFrameHeight = samuraiAttackTexture.getHeight() / 12;
+
+        TextureRegion[][] attackTmp = TextureRegion.split(samuraiAttackTexture, attackFrameWidth, attackFrameHeight);
+
+        // 向下攻击
+        TextureRegion[] attackDownFrames = new TextureRegion[4];
+        System.arraycopy(attackTmp[0], 0, attackDownFrames, 0, 4);
+
+        // 向上攻击
+        TextureRegion[] attackUpFrames = new TextureRegion[4];
+        System.arraycopy(attackTmp[4], 0, attackUpFrames, 0, 4);
+
+        // 向左攻击
+        TextureRegion[] attackLeftFrames = new TextureRegion[4];
+        System.arraycopy(attackTmp[8], 0, attackLeftFrames, 0, 4);
+
+        // 向右攻击
+        TextureRegion[] attackRightFrames = new TextureRegion[4];
+        for (int i = 0; i < 4; i++) {
+            attackRightFrames[i] = new TextureRegion(attackTmp[8 + i][0]);
+            attackRightFrames[i].flip(true, false);
+        }
+
+        // 创建动画序列
+        samuraiAttackDownAnimation = new Animation<>(0.1f, attackDownFrames);
+        samuraiAttackUpAnimation = new Animation<>(0.1f, attackUpFrames);
+        samuraiAttackLeftAnimation = new Animation<>(0.1f, attackLeftFrames);
+        samuraiAttackRightAnimation = new Animation<>(0.1f, attackRightFrames);
+
+        // 攻击动画不循环，播放一次后恢复待机
+        for (Animation<TextureRegion> textureRegionAnimation : Arrays.asList(
+            samuraiAttackDownAnimation, samuraiAttackUpAnimation,
+            samuraiAttackLeftAnimation, samuraiAttackRightAnimation)) {
+            textureRegionAnimation.setPlayMode(Animation.PlayMode.NORMAL);
         }
 
         // 设置角色定义
@@ -391,6 +439,7 @@ public class Main extends ApplicationAdapter {
 
     /**
      * 根据当前动画状态和时间，获取当前动画帧
+     *
      * @param stateTime 动画状态时间
      * @return 当前动画帧
      */
