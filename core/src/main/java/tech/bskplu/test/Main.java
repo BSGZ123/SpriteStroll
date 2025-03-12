@@ -17,9 +17,7 @@ import com.badlogic.gdx.utils.Array;
 import java.util.Arrays;
 import java.util.Random;
 
-/**
- * {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms.
- */
+/** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
 
     // 游戏视口宽度
@@ -53,7 +51,6 @@ public class Main extends ApplicationAdapter {
 
     // Player2（玩家 武士）
     private Texture samuraiTexture;
-    private Texture samuraiAttackTexture;// 新增攻击精灵表
     private Animation<TextureRegion> samuraiWalkDownAnimation;// 向下走动画
     private Animation<TextureRegion> samuraiWalkUpAnimation;// 向上走动画
     private Animation<TextureRegion> samuraiWalkLeftAnimation;// 向左走动画
@@ -63,11 +60,12 @@ public class Main extends ApplicationAdapter {
     private Animation<TextureRegion> samuraiIdleLeftAnimation;// 向左站立动画
     private Animation<TextureRegion> samuraiIdleRightAnimation;// 向右站立动画
 
-    // 新增攻击动画
-    private Animation<TextureRegion> samuraiAttackDownAnimation;
-    private Animation<TextureRegion> samuraiAttackUpAnimation;
-    private Animation<TextureRegion> samuraiAttackLeftAnimation;
-    private Animation<TextureRegion> samuraiAttackRightAnimation;
+    // 攻击动画
+    private Texture attackTexture; // 攻击动作精灵表
+    private Animation<TextureRegion> samuraiAttackDownAnimation;// 向下攻击动画
+    private Animation<TextureRegion> samuraiAttackUpAnimation;// 向上攻击动画
+    private Animation<TextureRegion> samuraiAttackLeftAnimation;// 向左攻击动画
+    private Animation<TextureRegion> samuraiAttackRightAnimation;// 向右攻击动画
 
     // 角色状态
     private float playerStateTime = 0f;// 角色动画状态时间，用于控制动画播放
@@ -77,6 +75,7 @@ public class Main extends ApplicationAdapter {
     private float playerRunSpeed = 5f;// 角色跑步速度（米/秒）
 
     private boolean isPlayer1Active = true;// 角色开关，true为猫，false为武士
+    private boolean isAttacking = false;// 是否正在攻击
 
     // Background（背景）
     private Array<Body> groundBodies = new Array<>();// 地面的Box2D Body数组
@@ -206,7 +205,7 @@ public class Main extends ApplicationAdapter {
         idleRightFrames[0] = new TextureRegion(tmp[8][0]);// 向右站立，通过翻转向左帧
         idleRightFrames[0].flip(true, false);
 
-        // 创建行走动画
+        // 创建动画
         samuraiWalkDownAnimation = new Animation<>(0.2f, walkDownFrames);
         samuraiWalkUpAnimation = new Animation<>(0.2f, walkUpFrames);
         samuraiWalkLeftAnimation = new Animation<>(0.2f, walkLeftFrames);
@@ -223,44 +222,44 @@ public class Main extends ApplicationAdapter {
             textureRegionAnimation.setPlayMode(Animation.PlayMode.LOOP);
         }
 
-        // 新增攻击动画
-        samuraiAttackTexture = new Texture(Gdx.files.internal("SanGuoZhi2.png"));
-        int attackFrameWidth = samuraiAttackTexture.getWidth();
-        int attackFrameHeight = samuraiAttackTexture.getHeight() / 12;
+        // 加载攻击精灵表
+        attackTexture = new Texture(Gdx.files.internal("SanGuoZhi2.png"));
+        int attackFrameWidth = attackTexture.getWidth();
+        int attackFrameHeight = attackTexture.getHeight() / 12;
+        TextureRegion[][] attackTmp = TextureRegion.split(attackTexture, attackFrameWidth, attackFrameHeight);
 
-        TextureRegion[][] attackTmp = TextureRegion.split(samuraiAttackTexture, attackFrameWidth, attackFrameHeight);
-
-        // 向下攻击
+        // 向下攻击动画
         TextureRegion[] attackDownFrames = new TextureRegion[4];
-        System.arraycopy(attackTmp[0], 0, attackDownFrames, 0, 4);
+        for (int i = 0; i < 4; i++) {
+            attackDownFrames[i] = attackTmp[i][0];
+        }
+        samuraiAttackDownAnimation = new Animation<>(0.1f, attackDownFrames);
+        samuraiAttackDownAnimation.setPlayMode(Animation.PlayMode.NORMAL);
 
-        // 向上攻击
+        // 向上攻击动画
         TextureRegion[] attackUpFrames = new TextureRegion[4];
-        System.arraycopy(attackTmp[4], 0, attackUpFrames, 0, 4);
+        for (int i = 4; i < 8; i++) {
+            attackUpFrames[i - 4] = attackTmp[i][0];
+        }
+        samuraiAttackUpAnimation = new Animation<>(0.1f, attackUpFrames);
+        samuraiAttackUpAnimation.setPlayMode(Animation.PlayMode.NORMAL);
 
-        // 向左攻击
+        // 向左攻击动画
         TextureRegion[] attackLeftFrames = new TextureRegion[4];
-        System.arraycopy(attackTmp[8], 0, attackLeftFrames, 0, 4);
+        for (int i = 8; i < 12; i++) {
+            attackLeftFrames[i - 8] = attackTmp[i][0];
+        }
+        samuraiAttackLeftAnimation = new Animation<>(0.1f, attackLeftFrames);
+        samuraiAttackLeftAnimation.setPlayMode(Animation.PlayMode.NORMAL);
 
-        // 向右攻击
+        // 向右攻击动画（翻转向左帧）
         TextureRegion[] attackRightFrames = new TextureRegion[4];
         for (int i = 0; i < 4; i++) {
-            attackRightFrames[i] = new TextureRegion(attackTmp[8 + i][0]);
+            attackRightFrames[i] = new TextureRegion(attackLeftFrames[i]);
             attackRightFrames[i].flip(true, false);
         }
-
-        // 创建动画序列
-        samuraiAttackDownAnimation = new Animation<>(0.1f, attackDownFrames);
-        samuraiAttackUpAnimation = new Animation<>(0.1f, attackUpFrames);
-        samuraiAttackLeftAnimation = new Animation<>(0.1f, attackLeftFrames);
         samuraiAttackRightAnimation = new Animation<>(0.1f, attackRightFrames);
-
-        // 攻击动画不循环，播放一次后恢复待机
-        for (Animation<TextureRegion> textureRegionAnimation : Arrays.asList(
-            samuraiAttackDownAnimation, samuraiAttackUpAnimation,
-            samuraiAttackLeftAnimation, samuraiAttackRightAnimation)) {
-            textureRegionAnimation.setPlayMode(Animation.PlayMode.NORMAL);
-        }
+        samuraiAttackRightAnimation.setPlayMode(Animation.PlayMode.NORMAL);
 
         // 设置角色定义
         BodyDef bodyDef = new BodyDef();
@@ -357,28 +356,80 @@ public class Main extends ApplicationAdapter {
             }
         } else {
             // 武士
-            if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-                velocity.y = speed;
-                currentAnimation = "walk_up";
-                lastDirection = "up";
-            } else if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-                velocity.y = -speed;
-                currentAnimation = "walk_down";
-                lastDirection = "down";
-            } else if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-                velocity.x = -speed;
-                currentAnimation = "walk_left";
-                lastDirection = "left";
-            } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-                velocity.x = speed;
-                currentAnimation = "walk_right";
-                lastDirection = "right";
+            if (!isAttacking) {
+                if (Gdx.input.isKeyPressed(Input.Keys.J)) {
+                    if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+                        currentAnimation = "attack_down";
+                        isAttacking = true;
+                        playerStateTime = 0f;// 重置动画时间
+                    } else if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+                        currentAnimation = "attack_up";
+                        isAttacking = true;
+                        playerStateTime = 0f;
+                    } else if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+                        currentAnimation = "attack_left";
+                        isAttacking = true;
+                        playerStateTime = 0f;
+                    } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+                        currentAnimation = "attack_right";
+                        isAttacking = true;
+                        playerStateTime = 0f;
+                    }
+                } else {
+                    if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+                        velocity.y = speed;
+                        currentAnimation = "walk_up";
+                        lastDirection = "up";
+                    } else if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+                        velocity.y = -speed;
+                        currentAnimation = "walk_down";
+                        lastDirection = "down";
+                    } else if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+                        velocity.x = -speed;
+                        currentAnimation = "walk_left";
+                        lastDirection = "left";
+                    } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+                        velocity.x = speed;
+                        currentAnimation = "walk_right";
+                        lastDirection = "right";
+                    } else {
+                        currentAnimation = "idle_" + lastDirection;
+                    }
+                }
             } else {
-                currentAnimation = "idle_" + lastDirection;// 根据最后方向设置待机动画
+                // 正在攻击，停止移动
+                velocity.set(0, 0);
+                // 检查攻击动画是否完成
+                Animation<TextureRegion> currentAnim = getCurrentAnimation();
+                if (currentAnim.isAnimationFinished(playerStateTime)) {
+                    isAttacking = false;
+                    currentAnimation = "idle_" + lastDirection;
+                }
             }
         }
 
         playerBody.setLinearVelocity(velocity);
+    }
+
+    /**
+     * 获取当前动画对象
+     */
+    private Animation<TextureRegion> getCurrentAnimation() {
+        return switch (currentAnimation) {
+            case "walk_down" -> samuraiWalkDownAnimation;
+            case "walk_up" -> samuraiWalkUpAnimation;
+            case "walk_left" -> samuraiWalkLeftAnimation;
+            case "walk_right" -> samuraiWalkRightAnimation;
+            case "idle_down" -> samuraiIdleDownAnimation;
+            case "idle_up" -> samuraiIdleUpAnimation;
+            case "idle_left" -> samuraiIdleLeftAnimation;
+            case "idle_right" -> samuraiIdleRightAnimation;
+            case "attack_down" -> samuraiAttackDownAnimation;
+            case "attack_up" -> samuraiAttackUpAnimation;
+            case "attack_left" -> samuraiAttackLeftAnimation;
+            case "attack_right" -> samuraiAttackRightAnimation;
+            default -> samuraiIdleDownAnimation;
+        };
     }
 
     @Override
@@ -439,7 +490,6 @@ public class Main extends ApplicationAdapter {
 
     /**
      * 根据当前动画状态和时间，获取当前动画帧
-     *
      * @param stateTime 动画状态时间
      * @return 当前动画帧
      */
@@ -453,17 +503,12 @@ public class Main extends ApplicationAdapter {
             };
         } else {
             // 武士
-            return switch (currentAnimation) {
-                case "walk_down" -> samuraiWalkDownAnimation.getKeyFrame(stateTime, true);
-                case "walk_up" -> samuraiWalkUpAnimation.getKeyFrame(stateTime, true);
-                case "walk_left" -> samuraiWalkLeftAnimation.getKeyFrame(stateTime, true);
-                case "walk_right" -> samuraiWalkRightAnimation.getKeyFrame(stateTime, true);
-                case "idle_down" -> samuraiIdleDownAnimation.getKeyFrame(stateTime, true);
-                case "idle_up" -> samuraiIdleUpAnimation.getKeyFrame(stateTime, true);
-                case "idle_left" -> samuraiIdleLeftAnimation.getKeyFrame(stateTime, true);
-                case "idle_right" -> samuraiIdleRightAnimation.getKeyFrame(stateTime, true);
-                default -> samuraiIdleDownAnimation.getKeyFrame(stateTime, true);// 默认向下站立
-            };
+            Animation<TextureRegion> anim = getCurrentAnimation();
+            if (isAttacking) {
+                return anim.getKeyFrame(stateTime, false);// 攻击动画不循环
+            } else {
+                return anim.getKeyFrame(stateTime, true);// 行走和站立动画循环
+            }
         }
     }
 
@@ -472,6 +517,7 @@ public class Main extends ApplicationAdapter {
         batch.dispose();
         playerTexture.dispose();
         samuraiTexture.dispose();
+        attackTexture.dispose(); // 释放攻击纹理
         world.dispose();
         debugRenderer.dispose();
         image.dispose();
