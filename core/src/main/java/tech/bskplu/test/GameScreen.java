@@ -352,6 +352,11 @@ public class GameScreen implements Screen {
 
         batch.end();
 
+        // 检测ESC键是否按下以退出游戏
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            Gdx.app.exit();
+        }
+
         music.setVolume(0.3f);
         music.play();
 

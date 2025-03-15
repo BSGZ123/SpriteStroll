@@ -11,7 +11,6 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Array;
@@ -96,7 +95,7 @@ public class StartScreen implements Screen {
 
     @Override
     public void show() {
-        Gdx.input.setInputProcessor(stage); //设置输入处理器为Stage
+        Gdx.input.setInputProcessor(stage);// 设置输入处理器为Stage
     }
 
     @Override
@@ -133,6 +132,7 @@ public class StartScreen implements Screen {
 
     @Override
     public void hide() {
+        Gdx.input.setInputProcessor(null);// 清空输入处理器
     }
 
     @Override
