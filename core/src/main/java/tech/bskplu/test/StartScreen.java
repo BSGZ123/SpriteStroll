@@ -3,7 +3,6 @@ package tech.bskplu.test;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
@@ -12,6 +11,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Array;
@@ -25,7 +25,6 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
  * @Version 1.1
  */
 public class StartScreen implements Screen {
-
     private final Game game;
     private Stage stage;
     private SpriteBatch batch;
@@ -49,41 +48,96 @@ public class StartScreen implements Screen {
         this.game = game;
         stage = new Stage(new ScreenViewport());
         batch = new SpriteBatch();
-    }
 
+        // 创建淡色背景图块
+        backgroundBlocks = new Array<>();
+        for (int i = 0; i < 20; i++) {
+            float x = MathUtils.random(0, Gdx.graphics.getWidth());
+            float y = MathUtils.random(0, Gdx.graphics.getHeight());
+            float width = MathUtils.random(50, 150);
+            float height = MathUtils.random(50, 150);
+            Color color = new Color(MathUtils.random(0.5f, 1f), MathUtils.random(0.5f, 1f), MathUtils.random(0.5f, 1f), 0.5f);
+            backgroundBlocks.add(new Block(x, y, width, height, color));
+        }
+
+        // 创建“开始游戏”按钮
+        Texture startButtonTexture = new Texture(Gdx.files.internal("StartCircleButton2.png"));
+        ImageButton startButton = new ImageButton(new TextureRegionDrawable(startButtonTexture));
+        startButton.setPosition(Gdx.graphics.getWidth() / 2f - startButton.getWidth() / 2, Gdx.graphics.getHeight() / 2f);
+        //startButton.setSize(344,192);
+        //startButton.setPosition(Gdx.graphics.getWidth() / 2f - 400, Gdx.graphics.getHeight() / 2f - 50);
+        startButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                game.setScreen(new TransitionScreen(game));
+            }
+        });
+
+        // 创建“退出游戏”按钮
+        Texture exitButtonTexture = new Texture(Gdx.files.internal("ExitCircleButton2.png"));
+        ImageButton exitButton = new ImageButton(new TextureRegionDrawable(exitButtonTexture));
+        exitButton.setPosition(Gdx.graphics.getWidth() / 2f - exitButton.getWidth() / 2, Gdx.graphics.getHeight() / 2f - 100);
+        //exitButton.setSize(344,192);
+        //exitButton.setPosition(Gdx.graphics.getWidth() / 2f - 400, Gdx.graphics.getHeight() / 2f - 150);
+        exitButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                Gdx.app.exit();
+                //System.out.println("666666");
+
+            }
+        });
+
+        stage.addActor(startButton);
+        stage.addActor(exitButton);
+
+        Gdx.app.log("StartScreen", "Start Button Position: " + startButton.getX() + ", " + startButton.getY());
+    }
 
     @Override
     public void show() {
-
+        Gdx.input.setInputProcessor(stage); //设置输入处理器为Stage
     }
 
     @Override
-    public void render(float v) {
+    public void render(float delta) {
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+        // 绘制背景图块
+        batch.begin();
+        for (Block block : backgroundBlocks) {
+            batch.setColor(block.color);
+            batch.draw(new Texture("ground.png"), block.x, block.y, block.width, block.height);// 使用ground.png作为淡色图块
+            batch.setColor(Color.WHITE);// 重置颜色
+        }
+        batch.end();
+
+        // 绘制按钮
+        stage.act(delta);
+        stage.draw();
     }
 
     @Override
-    public void resize(int i, int i1) {
-
+    public void resize(int width, int height) {
+        stage.getViewport().update(width, height, true);
     }
 
     @Override
     public void pause() {
-
     }
 
     @Override
     public void resume() {
-
     }
 
     @Override
     public void hide() {
-
     }
 
     @Override
     public void dispose() {
-
+        stage.dispose();
+        batch.dispose();
     }
 }
