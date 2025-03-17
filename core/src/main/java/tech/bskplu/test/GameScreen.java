@@ -354,10 +354,11 @@ public class GameScreen implements Screen {
 
         // 检测ESC键是否按下以退出游戏
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            Gdx.app.exit();
+            game.setScreen(new StartScreen(game));// 复用开始界面
+            //Gdx.app.exit();
         }
 
-        music.setVolume(0.3f);
+        music.setVolume(0.1f);
         music.play();
 
         debugRenderer.render(world, camera.combined);
@@ -378,6 +379,7 @@ public class GameScreen implements Screen {
 
     @Override
     public void show() {
+        Gdx.input.setInputProcessor(null);// 清空输入处理器
     }
 
     @Override
