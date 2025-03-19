@@ -26,6 +26,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 public class StartScreen implements Screen {
     private final Game game;
     private Stage stage;
+    private Texture groundTexture;
     private SpriteBatch batch;
     private Array<Block> backgroundBlocks;
 
@@ -45,6 +46,7 @@ public class StartScreen implements Screen {
 
     public StartScreen(Game game) {
         this.game = game;
+        groundTexture = new Texture("ground.png");
         stage = new Stage(new ScreenViewport());
         batch = new SpriteBatch();
 
@@ -63,8 +65,6 @@ public class StartScreen implements Screen {
         Texture startButtonTexture = new Texture(Gdx.files.internal("StartCircleButton2.png"));
         ImageButton startButton = new ImageButton(new TextureRegionDrawable(startButtonTexture));
         startButton.setPosition(Gdx.graphics.getWidth() / 2f - startButton.getWidth() / 2, Gdx.graphics.getHeight() / 2f);
-        //startButton.setSize(344,192);
-        //startButton.setPosition(Gdx.graphics.getWidth() / 2f - 400, Gdx.graphics.getHeight() / 2f - 50);
         startButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -76,13 +76,10 @@ public class StartScreen implements Screen {
         Texture exitButtonTexture = new Texture(Gdx.files.internal("ExitCircleButton2.png"));
         ImageButton exitButton = new ImageButton(new TextureRegionDrawable(exitButtonTexture));
         exitButton.setPosition(Gdx.graphics.getWidth() / 2f - exitButton.getWidth() / 2, Gdx.graphics.getHeight() / 2f - 100);
-        //exitButton.setSize(344,192);
-        //exitButton.setPosition(Gdx.graphics.getWidth() / 2f - 400, Gdx.graphics.getHeight() / 2f - 150);
         exitButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 Gdx.app.exit();
-                //System.out.println("666666");
 
             }
         });
@@ -107,7 +104,7 @@ public class StartScreen implements Screen {
         batch.begin();
         for (Block block : backgroundBlocks) {
             batch.setColor(block.color);
-            batch.draw(new Texture("ground.png"), block.x, block.y, block.width, block.height);// 使用ground.png作为淡色图块
+            batch.draw(groundTexture, block.x, block.y, block.width, block.height);// 使用ground.png作为淡色图块
             batch.setColor(Color.WHITE);// 重置颜色
         }
         batch.end();
