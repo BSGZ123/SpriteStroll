@@ -5,12 +5,15 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
@@ -94,6 +97,16 @@ public class GameScreen implements Screen {
 
     private Music music;
 
+    // 血量属性
+    private float playerHealth = 100f;
+    private float playerMaxHealth = 100f;
+    private float enemyHealth = 100f;
+    private float enemyMaxHealth = 100f;
+
+    // 绘制工具
+    private ShapeRenderer shapeRenderer;
+    private BitmapFont font;
+
     public GameScreen(Game game) {
         this.game = game;
         batch = new SpriteBatch();
@@ -106,15 +119,20 @@ public class GameScreen implements Screen {
         createPlayer();
         createSamurai();
         createGround();
-        createGuanPin(); // 添加敌方将领创建方法
+        createGuanPin();
 
         music = Gdx.audio.newMusic(Gdx.files.internal("LanTingXu.mp3"));
+
+        shapeRenderer = new ShapeRenderer();
+        font = new BitmapFont();
     }
 
     private void createPlayer() {
         playerTexture = new Texture(Gdx.files.internal("cat_SpriteSheet.png"));
+
         int frameWidth = playerTexture.getWidth() / 6;
         int frameHeight = playerTexture.getHeight() / 3;
+
         TextureRegion[][] tmp = TextureRegion.split(playerTexture, frameWidth, frameHeight);
         TextureRegion[] idleFrames = new TextureRegion[5];
         System.arraycopy(tmp[0], 0, idleFrames, 0, 5);
@@ -122,12 +140,14 @@ public class GameScreen implements Screen {
         System.arraycopy(tmp[1], 0, walkFrames, 0, 6);
         TextureRegion[] runFrames = new TextureRegion[6];
         System.arraycopy(tmp[2], 0, runFrames, 0, 6);
+
         playerIdleAnimation = new Animation<>(0.2f, idleFrames);
         playerWalkAnimation = new Animation<>(0.1f, walkFrames);
         playerRunAnimation = new Animation<>(0.05f, runFrames);
         for (Animation<TextureRegion> anim : Arrays.asList(playerIdleAnimation, playerWalkAnimation, playerRunAnimation)) {
             anim.setPlayMode(Animation.PlayMode.LOOP);
         }
+
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
         bodyDef.position.set(800 / 2 / PIXELS_PER_METER, 600 / 2 / PIXELS_PER_METER);
@@ -244,30 +264,24 @@ public class GameScreen implements Screen {
         }
     }
 
-    /** 创建敌方将领 GuanPin */
     private void createGuanPin() {
-        // 加载行走和待机动画纹理
         guanPinMovTexture = new Texture(Gdx.files.internal("Mov_GuanPin.png"));
         int movFrameHeight = guanPinMovTexture.getHeight() / 11;
         int movFrameWidth = guanPinMovTexture.getWidth();
         TextureRegion[][] movTmp = TextureRegion.split(guanPinMovTexture, movFrameWidth, movFrameHeight);
 
-        // 行走动画：向下 (帧 1-2)
         TextureRegion[] walkDownFrames = {movTmp[0][0], movTmp[1][0]};
         guanPinWalkDownAnimation = new Animation<>(0.2f, walkDownFrames);
         guanPinWalkDownAnimation.setPlayMode(Animation.PlayMode.LOOP);
 
-        // 行走动画：向上 (帧 3-4)
         TextureRegion[] walkUpFrames = {movTmp[2][0], movTmp[3][0]};
         guanPinWalkUpAnimation = new Animation<>(0.2f, walkUpFrames);
         guanPinWalkUpAnimation.setPlayMode(Animation.PlayMode.LOOP);
 
-        // 行走动画：向左 (帧 5-6)
         TextureRegion[] walkLeftFrames = {movTmp[4][0], movTmp[5][0]};
         guanPinWalkLeftAnimation = new Animation<>(0.2f, walkLeftFrames);
         guanPinWalkLeftAnimation.setPlayMode(Animation.PlayMode.LOOP);
 
-        // 行走动画：向右 (翻转向左帧)
         TextureRegion[] walkRightFrames = new TextureRegion[2];
         for (int i = 0; i < 2; i++) {
             walkRightFrames[i] = new TextureRegion(movTmp[4 + i][0]);
@@ -276,48 +290,39 @@ public class GameScreen implements Screen {
         guanPinWalkRightAnimation = new Animation<>(0.2f, walkRightFrames);
         guanPinWalkRightAnimation.setPlayMode(Animation.PlayMode.LOOP);
 
-        // 待机动画：向下 (帧 7)
         TextureRegion[] idleDownFrames = {movTmp[6][0]};
         guanPinIdleDownAnimation = new Animation<>(0.2f, idleDownFrames);
 
-        // 待机动画：向上 (帧 8)
         TextureRegion[] idleUpFrames = {movTmp[7][0]};
         guanPinIdleUpAnimation = new Animation<>(0.2f, idleUpFrames);
 
-        // 待机动画：向左 (帧 9)
         TextureRegion[] idleLeftFrames = {movTmp[8][0]};
         guanPinIdleLeftAnimation = new Animation<>(0.2f, idleLeftFrames);
 
-        // 待机动画：向右 (翻转向左帧)
         TextureRegion[] idleRightFrames = {new TextureRegion(movTmp[8][0])};
         idleRightFrames[0].flip(true, false);
         guanPinIdleRightAnimation = new Animation<>(0.2f, idleRightFrames);
 
-        // 加载攻击动画纹理
         guanPinAtkTexture = new Texture(Gdx.files.internal("Atk_GuanPin.png"));
         int atkFrameHeight = guanPinAtkTexture.getHeight() / 12;
         int atkFrameWidth = guanPinAtkTexture.getWidth();
         TextureRegion[][] atkTmp = TextureRegion.split(guanPinAtkTexture, atkFrameWidth, atkFrameHeight);
 
-        // 攻击动画：向下 (帧 1-4)
         TextureRegion[] attackDownFrames = new TextureRegion[4];
         for (int i = 0; i < 4; i++) attackDownFrames[i] = atkTmp[i][0];
         guanPinAttackDownAnimation = new Animation<>(0.1f, attackDownFrames);
         guanPinAttackDownAnimation.setPlayMode(Animation.PlayMode.NORMAL);
 
-        // 攻击动画：向上 (帧 5-8)
         TextureRegion[] attackUpFrames = new TextureRegion[4];
         for (int i = 0; i < 4; i++) attackUpFrames[i] = atkTmp[4 + i][0];
         guanPinAttackUpAnimation = new Animation<>(0.1f, attackUpFrames);
         guanPinAttackUpAnimation.setPlayMode(Animation.PlayMode.NORMAL);
 
-        // 攻击动画：向左 (帧 9-12)
         TextureRegion[] attackLeftFrames = new TextureRegion[4];
         for (int i = 0; i < 4; i++) attackLeftFrames[i] = atkTmp[8 + i][0];
         guanPinAttackLeftAnimation = new Animation<>(0.1f, attackLeftFrames);
         guanPinAttackLeftAnimation.setPlayMode(Animation.PlayMode.NORMAL);
 
-        // 攻击动画：向右 (翻转向左帧)
         TextureRegion[] attackRightFrames = new TextureRegion[4];
         for (int i = 0; i < 4; i++) {
             attackRightFrames[i] = new TextureRegion(atkTmp[8 + i][0]);
@@ -326,7 +331,6 @@ public class GameScreen implements Screen {
         guanPinAttackRightAnimation = new Animation<>(0.1f, attackRightFrames);
         guanPinAttackRightAnimation.setPlayMode(Animation.PlayMode.NORMAL);
 
-        // 创建敌方物理身体
         BodyDef enemyBodyDef = new BodyDef();
         enemyBodyDef.type = BodyDef.BodyType.DynamicBody;
         float randomX = MathUtils.random(0, 800 / PIXELS_PER_METER);
@@ -436,18 +440,20 @@ public class GameScreen implements Screen {
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+        // 处理输入和物理模拟
         handleInput();
         world.step(timeStep, velocityIterations, positionIterations);
         playerStateTime += delta;
-        enemyStateTime += delta; // 更新敌方状态时间
+        enemyStateTime += delta;
 
+        // 更新摄像机位置，跟随玩家
         camera.position.set(playerBody.getPosition().x * PIXELS_PER_METER, playerBody.getPosition().y * PIXELS_PER_METER, 0);
         camera.update();
 
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
 
-        // 绘制地面
+        // 绘制地块
         for (Body groundBody : groundBodies) {
             float x = groundBody.getPosition().x * PIXELS_PER_METER;
             float y = groundBody.getPosition().y * PIXELS_PER_METER;
@@ -468,7 +474,7 @@ public class GameScreen implements Screen {
         float y = playerBody.getPosition().y * PIXELS_PER_METER - currentFrame.getRegionHeight() / 2f;
         batch.draw(currentFrame, x, y);
 
-        // 绘制敌方将领 GuanPin（暂时设为向下待机）
+        // 绘制敌方单位
         TextureRegion enemyFrame = guanPinIdleDownAnimation.getKeyFrame(enemyStateTime, true);
         float enemyX = enemyBody.getPosition().x * PIXELS_PER_METER - enemyFrame.getRegionWidth() / 2f;
         float enemyY = enemyBody.getPosition().y * PIXELS_PER_METER - enemyFrame.getRegionHeight() / 2f;
@@ -476,7 +482,57 @@ public class GameScreen implements Screen {
 
         batch.end();
 
-        // 检测ESC键退出到开始场景
+        // 绘制玩家血量条
+        shapeRenderer.setProjectionMatrix(camera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+        // 计算血量条的世界坐标（玩家头顶上方）
+        float barWidth = 50;// 血量条宽度
+        float barHeight = 5;// 血量条高度
+        float barX = x + (currentFrame.getRegionWidth() - barWidth) / 2;// 居中对齐玩家
+        float barY = y + currentFrame.getRegionHeight() + 6;// 在玩家头顶上方10个单位
+
+        // 先绘制背景矩形（白色）
+        shapeRenderer.setColor(Color.WHITE);
+        shapeRenderer.rect(barX, barY, barWidth, barHeight);
+
+        // 再绘制血量矩形（红色）
+        float playerHealthPercentage = playerHealth / playerMaxHealth;
+        shapeRenderer.setColor(Color.RED);
+        shapeRenderer.rect(barX, barY, barWidth * playerHealthPercentage, barHeight);
+
+        shapeRenderer.end();
+
+        // 绘制玩家血量百分比
+        batch.setProjectionMatrix(camera.combined);
+        batch.begin();
+        font.draw(batch, String.format("%.0f%%", playerHealthPercentage * 100), barX + barWidth + 5, barY + barHeight / 2);
+        batch.end();
+
+        // 绘制敌方血量条
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+        // 先绘制背景矩形（白色）
+        float enemyHealthBarWidth = enemyFrame.getRegionWidth();
+        float enemyHealthBarHeight = 5;
+        float enemyHealthBarX = enemyX;
+        float enemyHealthBarY = enemyY + enemyFrame.getRegionHeight() + 5;
+        shapeRenderer.setColor(Color.WHITE);
+        shapeRenderer.rect(enemyHealthBarX, enemyHealthBarY, enemyHealthBarWidth, enemyHealthBarHeight);
+
+        // 再绘制血量矩形（红色）
+        float enemyHealthPercentage = enemyHealth / enemyMaxHealth;
+        shapeRenderer.setColor(Color.RED);
+        shapeRenderer.rect(enemyHealthBarX, enemyHealthBarY, enemyHealthBarWidth * enemyHealthPercentage, enemyHealthBarHeight);
+
+        shapeRenderer.end();
+
+        // 绘制敌方血量百分比
+        batch.begin();
+        font.draw(batch, String.format("%.0f%%", enemyHealthPercentage * 100), enemyHealthBarX + enemyHealthBarWidth + 5, enemyHealthBarY + enemyHealthBarHeight / 2);
+        batch.end();
+
+        // 检测ESC键是否按下以退出游戏
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             game.setScreen(new StartScreen(game));
         }
@@ -536,5 +592,7 @@ public class GameScreen implements Screen {
         world.dispose();
         debugRenderer.dispose();
         music.dispose();
+        shapeRenderer.dispose();
+        font.dispose();
     }
 }
