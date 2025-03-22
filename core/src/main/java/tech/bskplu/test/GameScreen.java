@@ -11,12 +11,12 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Array;
 
 import java.util.Arrays;
-import java.util.Random;
 
 /**
  * @ClassName: GameScreen
@@ -54,12 +54,30 @@ public class GameScreen implements Screen {
     private Animation<TextureRegion> samuraiIdleLeftAnimation;
     private Animation<TextureRegion> samuraiIdleRightAnimation;
 
-    // 攻击动画
+    // 武士攻击动画
     private Texture attackTexture;
     private Animation<TextureRegion> samuraiAttackDownAnimation;
     private Animation<TextureRegion> samuraiAttackUpAnimation;
     private Animation<TextureRegion> samuraiAttackLeftAnimation;
     private Animation<TextureRegion> samuraiAttackRightAnimation;
+
+    // 敌方将领 GuanPin
+    private Texture guanPinMovTexture;
+    private Texture guanPinAtkTexture;
+    private Animation<TextureRegion> guanPinWalkDownAnimation;
+    private Animation<TextureRegion> guanPinWalkUpAnimation;
+    private Animation<TextureRegion> guanPinWalkLeftAnimation;
+    private Animation<TextureRegion> guanPinWalkRightAnimation;
+    private Animation<TextureRegion> guanPinIdleDownAnimation;
+    private Animation<TextureRegion> guanPinIdleUpAnimation;
+    private Animation<TextureRegion> guanPinIdleLeftAnimation;
+    private Animation<TextureRegion> guanPinIdleRightAnimation;
+    private Animation<TextureRegion> guanPinAttackDownAnimation;
+    private Animation<TextureRegion> guanPinAttackUpAnimation;
+    private Animation<TextureRegion> guanPinAttackLeftAnimation;
+    private Animation<TextureRegion> guanPinAttackRightAnimation;
+    private Body enemyBody;
+    private float enemyStateTime = 0f;
 
     // 角色状态
     private float playerStateTime = 0f;
@@ -88,6 +106,7 @@ public class GameScreen implements Screen {
         createPlayer();
         createSamurai();
         createGround();
+        createGuanPin(); // 添加敌方将领创建方法
 
         music = Gdx.audio.newMusic(Gdx.files.internal("LanTingXu.mp3"));
     }
@@ -135,7 +154,6 @@ public class GameScreen implements Screen {
         TextureRegion[] walkUpFrames = {tmp[2][0], tmp[3][0]};
         TextureRegion[] walkLeftFrames = {tmp[4][0], tmp[5][0]};
         TextureRegion[] walkRightFrames = {new TextureRegion(tmp[4][0]), new TextureRegion(tmp[5][0])};
-
         walkRightFrames[0].flip(true, false);
         walkRightFrames[1].flip(true, false);
 
@@ -161,39 +179,36 @@ public class GameScreen implements Screen {
         }
 
         attackTexture = new Texture(Gdx.files.internal("SanGuoZhi2.png"));
-
         int attackFrameWidth = attackTexture.getWidth();
         int attackFrameHeight = attackTexture.getHeight() / 12;
 
         TextureRegion[][] attackTmp = TextureRegion.split(attackTexture, attackFrameWidth, attackFrameHeight);
         TextureRegion[] attackDownFrames = new TextureRegion[4];
         for (int i = 0; i < 4; i++) attackDownFrames[i] = attackTmp[i][0];
-
         samuraiAttackDownAnimation = new Animation<>(0.1f, attackDownFrames);
         samuraiAttackDownAnimation.setPlayMode(Animation.PlayMode.NORMAL);
+
         TextureRegion[] attackUpFrames = new TextureRegion[4];
         for (int i = 4; i < 8; i++) attackUpFrames[i - 4] = attackTmp[i][0];
-
         samuraiAttackUpAnimation = new Animation<>(0.1f, attackUpFrames);
         samuraiAttackUpAnimation.setPlayMode(Animation.PlayMode.NORMAL);
+
         TextureRegion[] attackLeftFrames = new TextureRegion[4];
         for (int i = 8; i < 12; i++) attackLeftFrames[i - 8] = attackTmp[i][0];
-
         samuraiAttackLeftAnimation = new Animation<>(0.1f, attackLeftFrames);
         samuraiAttackLeftAnimation.setPlayMode(Animation.PlayMode.NORMAL);
+
         TextureRegion[] attackRightFrames = new TextureRegion[4];
         for (int i = 0; i < 4; i++) {
             attackRightFrames[i] = new TextureRegion(attackLeftFrames[i]);
             attackRightFrames[i].flip(true, false);
         }
-
         samuraiAttackRightAnimation = new Animation<>(0.1f, attackRightFrames);
         samuraiAttackRightAnimation.setPlayMode(Animation.PlayMode.NORMAL);
 
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
         bodyDef.position.set(800 / 2 / PIXELS_PER_METER, 600 / 2 / PIXELS_PER_METER);
-
         if (playerBody != null) {
             playerBody.setType(BodyDef.BodyType.DynamicBody);
             if (playerBody.getFixtureList().size > 0) {
@@ -212,12 +227,11 @@ public class GameScreen implements Screen {
     }
 
     private void createGround() {
-        Random random = new Random();
         for (int i = 0; i < groundCount; i++) {
-            float x = random.nextFloat() * 800 / PIXELS_PER_METER;
-            float y = random.nextFloat() * 600 / PIXELS_PER_METER;
-            float width = random.nextFloat() * 100 / PIXELS_PER_METER + 50 / PIXELS_PER_METER;
-            float height = random.nextFloat() * 50 / PIXELS_PER_METER + 20 / PIXELS_PER_METER;
+            float x = MathUtils.random(0, 800 / PIXELS_PER_METER);
+            float y = MathUtils.random(0, 600 / PIXELS_PER_METER);
+            float width = MathUtils.random(50 / PIXELS_PER_METER, 150 / PIXELS_PER_METER);
+            float height = MathUtils.random(20 / PIXELS_PER_METER, 70 / PIXELS_PER_METER);
             BodyDef groundBodyDef = new BodyDef();
             groundBodyDef.type = BodyDef.BodyType.StaticBody;
             groundBodyDef.position.set(x, y);
@@ -228,6 +242,107 @@ public class GameScreen implements Screen {
             groundBodies.add(groundBody);
             groundBox.dispose();
         }
+    }
+
+    /** 创建敌方将领 GuanPin */
+    private void createGuanPin() {
+        // 加载行走和待机动画纹理
+        guanPinMovTexture = new Texture(Gdx.files.internal("Mov_GuanPin.png"));
+        int movFrameHeight = guanPinMovTexture.getHeight() / 11;
+        int movFrameWidth = guanPinMovTexture.getWidth();
+        TextureRegion[][] movTmp = TextureRegion.split(guanPinMovTexture, movFrameWidth, movFrameHeight);
+
+        // 行走动画：向下 (帧 1-2)
+        TextureRegion[] walkDownFrames = {movTmp[0][0], movTmp[1][0]};
+        guanPinWalkDownAnimation = new Animation<>(0.2f, walkDownFrames);
+        guanPinWalkDownAnimation.setPlayMode(Animation.PlayMode.LOOP);
+
+        // 行走动画：向上 (帧 3-4)
+        TextureRegion[] walkUpFrames = {movTmp[2][0], movTmp[3][0]};
+        guanPinWalkUpAnimation = new Animation<>(0.2f, walkUpFrames);
+        guanPinWalkUpAnimation.setPlayMode(Animation.PlayMode.LOOP);
+
+        // 行走动画：向左 (帧 5-6)
+        TextureRegion[] walkLeftFrames = {movTmp[4][0], movTmp[5][0]};
+        guanPinWalkLeftAnimation = new Animation<>(0.2f, walkLeftFrames);
+        guanPinWalkLeftAnimation.setPlayMode(Animation.PlayMode.LOOP);
+
+        // 行走动画：向右 (翻转向左帧)
+        TextureRegion[] walkRightFrames = new TextureRegion[2];
+        for (int i = 0; i < 2; i++) {
+            walkRightFrames[i] = new TextureRegion(movTmp[4 + i][0]);
+            walkRightFrames[i].flip(true, false);
+        }
+        guanPinWalkRightAnimation = new Animation<>(0.2f, walkRightFrames);
+        guanPinWalkRightAnimation.setPlayMode(Animation.PlayMode.LOOP);
+
+        // 待机动画：向下 (帧 7)
+        TextureRegion[] idleDownFrames = {movTmp[6][0]};
+        guanPinIdleDownAnimation = new Animation<>(0.2f, idleDownFrames);
+
+        // 待机动画：向上 (帧 8)
+        TextureRegion[] idleUpFrames = {movTmp[7][0]};
+        guanPinIdleUpAnimation = new Animation<>(0.2f, idleUpFrames);
+
+        // 待机动画：向左 (帧 9)
+        TextureRegion[] idleLeftFrames = {movTmp[8][0]};
+        guanPinIdleLeftAnimation = new Animation<>(0.2f, idleLeftFrames);
+
+        // 待机动画：向右 (翻转向左帧)
+        TextureRegion[] idleRightFrames = {new TextureRegion(movTmp[8][0])};
+        idleRightFrames[0].flip(true, false);
+        guanPinIdleRightAnimation = new Animation<>(0.2f, idleRightFrames);
+
+        // 加载攻击动画纹理
+        guanPinAtkTexture = new Texture(Gdx.files.internal("Atk_GuanPin.png"));
+        int atkFrameHeight = guanPinAtkTexture.getHeight() / 12;
+        int atkFrameWidth = guanPinAtkTexture.getWidth();
+        TextureRegion[][] atkTmp = TextureRegion.split(guanPinAtkTexture, atkFrameWidth, atkFrameHeight);
+
+        // 攻击动画：向下 (帧 1-4)
+        TextureRegion[] attackDownFrames = new TextureRegion[4];
+        for (int i = 0; i < 4; i++) attackDownFrames[i] = atkTmp[i][0];
+        guanPinAttackDownAnimation = new Animation<>(0.1f, attackDownFrames);
+        guanPinAttackDownAnimation.setPlayMode(Animation.PlayMode.NORMAL);
+
+        // 攻击动画：向上 (帧 5-8)
+        TextureRegion[] attackUpFrames = new TextureRegion[4];
+        for (int i = 0; i < 4; i++) attackUpFrames[i] = atkTmp[4 + i][0];
+        guanPinAttackUpAnimation = new Animation<>(0.1f, attackUpFrames);
+        guanPinAttackUpAnimation.setPlayMode(Animation.PlayMode.NORMAL);
+
+        // 攻击动画：向左 (帧 9-12)
+        TextureRegion[] attackLeftFrames = new TextureRegion[4];
+        for (int i = 0; i < 4; i++) attackLeftFrames[i] = atkTmp[8 + i][0];
+        guanPinAttackLeftAnimation = new Animation<>(0.1f, attackLeftFrames);
+        guanPinAttackLeftAnimation.setPlayMode(Animation.PlayMode.NORMAL);
+
+        // 攻击动画：向右 (翻转向左帧)
+        TextureRegion[] attackRightFrames = new TextureRegion[4];
+        for (int i = 0; i < 4; i++) {
+            attackRightFrames[i] = new TextureRegion(atkTmp[8 + i][0]);
+            attackRightFrames[i].flip(true, false);
+        }
+        guanPinAttackRightAnimation = new Animation<>(0.1f, attackRightFrames);
+        guanPinAttackRightAnimation.setPlayMode(Animation.PlayMode.NORMAL);
+
+        // 创建敌方物理身体
+        BodyDef enemyBodyDef = new BodyDef();
+        enemyBodyDef.type = BodyDef.BodyType.DynamicBody;
+        float randomX = MathUtils.random(0, 800 / PIXELS_PER_METER);
+        float randomY = MathUtils.random(0, 600 / PIXELS_PER_METER);
+        enemyBodyDef.position.set(randomX, randomY);
+        enemyBody = world.createBody(enemyBodyDef);
+
+        CircleShape enemyShape = new CircleShape();
+        enemyShape.setRadius(16f / PIXELS_PER_METER);
+        FixtureDef enemyFixtureDef = new FixtureDef();
+        enemyFixtureDef.shape = enemyShape;
+        enemyFixtureDef.density = 1f;
+        enemyFixtureDef.friction = 0.4f;
+        enemyFixtureDef.restitution = 0.1f;
+        enemyBody.createFixture(enemyFixtureDef).setUserData("enemy");
+        enemyShape.dispose();
     }
 
     private void handleInput() {
@@ -324,6 +439,7 @@ public class GameScreen implements Screen {
         handleInput();
         world.step(timeStep, velocityIterations, positionIterations);
         playerStateTime += delta;
+        enemyStateTime += delta; // 更新敌方状态时间
 
         camera.position.set(playerBody.getPosition().x * PIXELS_PER_METER, playerBody.getPosition().y * PIXELS_PER_METER, 0);
         camera.update();
@@ -331,6 +447,7 @@ public class GameScreen implements Screen {
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
 
+        // 绘制地面
         for (Body groundBody : groundBodies) {
             float x = groundBody.getPosition().x * PIXELS_PER_METER;
             float y = groundBody.getPosition().y * PIXELS_PER_METER;
@@ -345,21 +462,24 @@ public class GameScreen implements Screen {
             batch.draw(groundTexture, x - width / 2, y - height / 2, width, height);
         }
 
+        // 绘制玩家角色
         TextureRegion currentFrame = getCurrentFrame(playerStateTime);
         float x = playerBody.getPosition().x * PIXELS_PER_METER - currentFrame.getRegionWidth() / 2f;
         float y = playerBody.getPosition().y * PIXELS_PER_METER - currentFrame.getRegionHeight() / 2f;
         batch.draw(currentFrame, x, y);
 
+        // 绘制敌方将领 GuanPin（暂时设为向下待机）
+        TextureRegion enemyFrame = guanPinIdleDownAnimation.getKeyFrame(enemyStateTime, true);
+        float enemyX = enemyBody.getPosition().x * PIXELS_PER_METER - enemyFrame.getRegionWidth() / 2f;
+        float enemyY = enemyBody.getPosition().y * PIXELS_PER_METER - enemyFrame.getRegionHeight() / 2f;
+        batch.draw(enemyFrame, enemyX, enemyY);
+
         batch.end();
 
-        // 检测ESC键是否按下以退出游戏
+        // 检测ESC键退出到开始场景
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            game.setScreen(new StartScreen(game));// 复用开始界面
-            //Gdx.app.exit();
+            game.setScreen(new StartScreen(game));
         }
-
-//        music.setVolume(0.1f);
-//        music.play();
 
         debugRenderer.render(world, camera.combined);
     }
@@ -379,7 +499,7 @@ public class GameScreen implements Screen {
 
     @Override
     public void show() {
-        Gdx.input.setInputProcessor(null);// 清空输入处理器
+        Gdx.input.setInputProcessor(null);
         music.setVolume(0.1f);
         music.setLooping(true);
         music.play();
@@ -411,6 +531,8 @@ public class GameScreen implements Screen {
         playerTexture.dispose();
         samuraiTexture.dispose();
         attackTexture.dispose();
+        guanPinMovTexture.dispose();
+        guanPinAtkTexture.dispose();
         world.dispose();
         debugRenderer.dispose();
         music.dispose();
