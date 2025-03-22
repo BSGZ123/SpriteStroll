@@ -358,8 +358,8 @@ public class GameScreen implements Screen {
             //Gdx.app.exit();
         }
 
-        music.setVolume(0.1f);
-        music.play();
+//        music.setVolume(0.1f);
+//        music.play();
 
         debugRenderer.render(world, camera.combined);
     }
@@ -380,6 +380,9 @@ public class GameScreen implements Screen {
     @Override
     public void show() {
         Gdx.input.setInputProcessor(null);// 清空输入处理器
+        music.setVolume(0.1f);
+        music.setLooping(true);
+        music.play();
     }
 
     @Override
@@ -399,6 +402,7 @@ public class GameScreen implements Screen {
 
     @Override
     public void hide() {
+        music.stop();
     }
 
     @Override
