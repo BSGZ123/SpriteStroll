@@ -2,7 +2,9 @@
 
 A [libGDX](https://libgdx.com/) project generated with [gdx-liftoff](https://github.com/libgdx/gdx-liftoff).
 
-This project was generated with a template including simple application launchers and an `ApplicationAdapter` extension that draws libGDX logo.
+This project is a learning demonstration project created using a template that includes simple application launchers and 
+a multi-scene setup with multiple characters on simple terrain. I will use this project to learn about drawing character 
+walking and attack animations, switching between multiple scenes, and other game techniques.
 
 ## Platforms
 

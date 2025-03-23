@@ -88,7 +88,7 @@ public class GameScreen implements Screen {
     private String lastDirection = "down";
     private float playerSpeed = 2f;
     private float playerRunSpeed = 5f;
-    private boolean isPlayer1Active = true;
+    private boolean isPlayer1Active = false;
     private boolean isAttacking = false;
 
     // 背景（地面）
@@ -555,7 +555,7 @@ public class GameScreen implements Screen {
 
     @Override
     public void show() {
-        Gdx.input.setInputProcessor(null);
+        //Gdx.input.setInputProcessor(null);
         music.setVolume(0.1f);
         music.setLooping(true);
         music.play();
