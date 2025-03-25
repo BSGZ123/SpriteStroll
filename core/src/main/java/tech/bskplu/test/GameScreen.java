@@ -39,6 +39,9 @@ public class GameScreen implements Screen {
     private int velocityIterations = 6;
     private int positionIterations = 2;
 
+    private static final float WORLD_WIDTH = 800 / PIXELS_PER_METER + 4f;// 25..
+    private static final float WORLD_HEIGHT = 600 / PIXELS_PER_METER + 4f;// 18.75..
+
     // Player1（猫猫）
     private Body playerBody;
     private Texture playerTexture;
@@ -119,6 +122,7 @@ public class GameScreen implements Screen {
         createPlayer();
         createSamurai();
         createGround();
+        createBoundaries();
         createGuanPin();
 
         music = Gdx.audio.newMusic(Gdx.files.internal("LanTingXu.mp3"));
@@ -126,6 +130,51 @@ public class GameScreen implements Screen {
         shapeRenderer = new ShapeRenderer();
         font = new BitmapFont();
     }
+
+    // 创建场景边界
+    private  void createBoundaries(){
+        // 创建左边界
+        BodyDef leftBoundaryDef = new BodyDef();
+        leftBoundaryDef.type = BodyDef.BodyType.StaticBody;
+        leftBoundaryDef.position.set(0, WORLD_HEIGHT / 2);
+        Body leftBoundary = world.createBody(leftBoundaryDef);
+        PolygonShape leftShape = new PolygonShape();
+        leftShape.setAsBox(1 / PIXELS_PER_METER, WORLD_HEIGHT / 2);
+        leftBoundary.createFixture(leftShape, 0.0f).setUserData("boundary");
+        leftShape.dispose();
+
+        // 创建右边界
+        BodyDef rightBoundaryDef = new BodyDef();
+        rightBoundaryDef.type = BodyDef.BodyType.StaticBody;
+        rightBoundaryDef.position.set(WORLD_WIDTH, WORLD_HEIGHT / 2);
+        Body rightBoundary = world.createBody(rightBoundaryDef);
+        PolygonShape rightShape = new PolygonShape();
+        rightShape.setAsBox(1 / PIXELS_PER_METER, WORLD_HEIGHT / 2);
+        rightBoundary.createFixture(rightShape, 0.0f).setUserData("boundary");
+        rightShape.dispose();
+
+        // 创建上边界
+        BodyDef topBoundaryDef = new BodyDef();
+        topBoundaryDef.type = BodyDef.BodyType.StaticBody;
+        topBoundaryDef.position.set(WORLD_WIDTH / 2, WORLD_HEIGHT);
+        Body topBoundary = world.createBody(topBoundaryDef);
+        PolygonShape topShape = new PolygonShape();
+        topShape.setAsBox(WORLD_WIDTH / 2, 1 / PIXELS_PER_METER);
+        topBoundary.createFixture(topShape, 0.0f).setUserData("boundary");
+        topShape.dispose();
+
+        // 创建下边界
+        BodyDef bottomBoundaryDef = new BodyDef();
+        bottomBoundaryDef.type = BodyDef.BodyType.StaticBody;
+        bottomBoundaryDef.position.set(WORLD_WIDTH / 2, 0);
+        Body bottomBoundary = world.createBody(bottomBoundaryDef);
+        PolygonShape bottomShape = new PolygonShape();
+        bottomShape.setAsBox(WORLD_WIDTH / 2, 1 / PIXELS_PER_METER);
+        bottomBoundary.createFixture(bottomShape, 0.0f).setUserData("boundary");
+        bottomShape.dispose();
+    }
+
+
 
     private void createPlayer() {
         playerTexture = new Texture(Gdx.files.internal("cat_SpriteSheet.png"));
