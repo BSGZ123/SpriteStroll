@@ -38,9 +38,10 @@ public class GameScreen implements Screen {
     private float timeStep = 1 / 60f;
     private int velocityIterations = 6;
     private int positionIterations = 2;
-
-    private static final float WORLD_WIDTH = 800 / PIXELS_PER_METER + 4f;// 25..
-    private static final float WORLD_HEIGHT = 600 / PIXELS_PER_METER + 4f;// 18.75..
+    private static final float GAME_WIDTH_PIXELS = 800f;
+    private static final float GAME_HEIGHT_PIXELS = 600f;
+    private static final float GAME_WIDTH_METERS = GAME_WIDTH_PIXELS / PIXELS_PER_METER;
+    private static final float GAME_HEIGHT_METERS = GAME_HEIGHT_PIXELS / PIXELS_PER_METER;
 
     // Player1（猫猫）
     private Body playerBody;
@@ -97,6 +98,7 @@ public class GameScreen implements Screen {
     // 背景（地面）
     private Array<Body> groundBodies = new Array<>();
     private int groundCount = 10;
+    private Texture groundTexture;
 
     private Music music;
 
@@ -114,15 +116,19 @@ public class GameScreen implements Screen {
         this.game = game;
         batch = new SpriteBatch();
         camera = new OrthographicCamera();
-        camera.setToOrtho(false, 800, 600);
+        // 使用常量设置摄像机
+        camera.setToOrtho(false, GAME_WIDTH_PIXELS, GAME_HEIGHT_PIXELS);
 
         world = new World(new Vector2(0, 0), true);
         debugRenderer = new Box2DDebugRenderer();
 
+        // --- 创建游戏元素 ---
+        groundTexture = new Texture(Gdx.files.internal("ground.png"));// 初始化地块纹理
+
+        createBoundaries();
         createPlayer();
         createSamurai();
         createGround();
-        createBoundaries();
         createGuanPin();
 
         music = Gdx.audio.newMusic(Gdx.files.internal("LanTingXu.mp3"));
@@ -132,46 +138,39 @@ public class GameScreen implements Screen {
     }
 
     // 创建场景边界
-    private  void createBoundaries(){
-        // 创建左边界
-        BodyDef leftBoundaryDef = new BodyDef();
-        leftBoundaryDef.type = BodyDef.BodyType.StaticBody;
-        leftBoundaryDef.position.set(0, WORLD_HEIGHT / 2);
-        Body leftBoundary = world.createBody(leftBoundaryDef);
-        PolygonShape leftShape = new PolygonShape();
-        leftShape.setAsBox(1 / PIXELS_PER_METER, WORLD_HEIGHT / 2);
-        leftBoundary.createFixture(leftShape, 0.0f).setUserData("boundary");
-        leftShape.dispose();
+    private void createBoundaries() {
+        float wallThickness = 0.5f;// 墙的厚度（米）
 
-        // 创建右边界
-        BodyDef rightBoundaryDef = new BodyDef();
-        rightBoundaryDef.type = BodyDef.BodyType.StaticBody;
-        rightBoundaryDef.position.set(WORLD_WIDTH, WORLD_HEIGHT / 2);
-        Body rightBoundary = world.createBody(rightBoundaryDef);
-        PolygonShape rightShape = new PolygonShape();
-        rightShape.setAsBox(1 / PIXELS_PER_METER, WORLD_HEIGHT / 2);
-        rightBoundary.createFixture(rightShape, 0.0f).setUserData("boundary");
-        rightShape.dispose();
+        // --- 创建边界的通用设置 ---
+        BodyDef boundaryBodyDef = new BodyDef();
+        boundaryBodyDef.type = BodyDef.BodyType.StaticBody;
+        PolygonShape boundaryShape = new PolygonShape();
+        FixtureDef boundaryFixtureDef = new FixtureDef();
+        boundaryFixtureDef.shape = boundaryShape;
+        boundaryFixtureDef.friction = 0.4f;// 可以给墙一些摩擦力
 
-        // 创建上边界
-        BodyDef topBoundaryDef = new BodyDef();
-        topBoundaryDef.type = BodyDef.BodyType.StaticBody;
-        topBoundaryDef.position.set(WORLD_WIDTH / 2, WORLD_HEIGHT);
-        Body topBoundary = world.createBody(topBoundaryDef);
-        PolygonShape topShape = new PolygonShape();
-        topShape.setAsBox(WORLD_WIDTH / 2, 1 / PIXELS_PER_METER);
-        topBoundary.createFixture(topShape, 0.0f).setUserData("boundary");
-        topShape.dispose();
+        // --- 创建底部边界 ---
+        boundaryBodyDef.position.set(GAME_WIDTH_METERS / 2f, -wallThickness / 2f);
+        boundaryShape.setAsBox(GAME_WIDTH_METERS / 2f, wallThickness / 2f);
+        world.createBody(boundaryBodyDef).createFixture(boundaryFixtureDef).setUserData("boundary_bottom");
 
-        // 创建下边界
-        BodyDef bottomBoundaryDef = new BodyDef();
-        bottomBoundaryDef.type = BodyDef.BodyType.StaticBody;
-        bottomBoundaryDef.position.set(WORLD_WIDTH / 2, 0);
-        Body bottomBoundary = world.createBody(bottomBoundaryDef);
-        PolygonShape bottomShape = new PolygonShape();
-        bottomShape.setAsBox(WORLD_WIDTH / 2, 1 / PIXELS_PER_METER);
-        bottomBoundary.createFixture(bottomShape, 0.0f).setUserData("boundary");
-        bottomShape.dispose();
+        // --- 创建顶部边界 ---
+        boundaryBodyDef.position.set(GAME_WIDTH_METERS / 2f, GAME_HEIGHT_METERS + wallThickness / 2f);
+        boundaryShape.setAsBox(GAME_WIDTH_METERS / 2f, wallThickness / 2f);
+        world.createBody(boundaryBodyDef).createFixture(boundaryFixtureDef).setUserData("boundary_top");
+
+        // --- 创建左侧边界 ---
+        boundaryBodyDef.position.set(-wallThickness / 2f, GAME_HEIGHT_METERS / 2f);
+        boundaryShape.setAsBox(wallThickness / 2f, GAME_HEIGHT_METERS / 2f);
+        world.createBody(boundaryBodyDef).createFixture(boundaryFixtureDef).setUserData("boundary_left");
+
+        // --- 创建右侧边界 ---
+        boundaryBodyDef.position.set(GAME_WIDTH_METERS + wallThickness / 2f, GAME_HEIGHT_METERS / 2f);
+        boundaryShape.setAsBox(wallThickness / 2f, GAME_HEIGHT_METERS / 2f);
+        world.createBody(boundaryBodyDef).createFixture(boundaryFixtureDef).setUserData("boundary_right");
+
+        // --- 释放形状资源 ---
+        boundaryShape.dispose();
     }
 
 
@@ -197,6 +196,9 @@ public class GameScreen implements Screen {
             anim.setPlayMode(Animation.PlayMode.LOOP);
         }
 
+        // --- 创建 Player Body (初始为猫猫，但会被武士覆盖) ---
+        // 注意：这里的 Body 会在 createSamurai 中被重新配置，
+        // 所以初始位置和形状可能不重要，但必须创建它。
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
         bodyDef.position.set(800 / 2 / PIXELS_PER_METER, 600 / 2 / PIXELS_PER_METER);
@@ -207,7 +209,7 @@ public class GameScreen implements Screen {
         fixtureDef.shape = circleShape;
         fixtureDef.density = 1f;
         fixtureDef.friction = 0.4f;
-        fixtureDef.restitution = 0.1f;
+        fixtureDef.restitution = 0.1f;// 减少弹跳
         playerBody.createFixture(fixtureDef).setUserData("player");
         circleShape.dispose();
     }
@@ -275,17 +277,16 @@ public class GameScreen implements Screen {
         samuraiAttackRightAnimation = new Animation<>(0.1f, attackRightFrames);
         samuraiAttackRightAnimation.setPlayMode(Animation.PlayMode.NORMAL);
 
-        BodyDef bodyDef = new BodyDef();
-        bodyDef.type = BodyDef.BodyType.DynamicBody;
-        bodyDef.position.set(800 / 2 / PIXELS_PER_METER, 600 / 2 / PIXELS_PER_METER);
+        // --- 配置 Player Body 为武士 ---
+        // 确保 playerBody 存在且是 DynamicBody
         if (playerBody != null) {
             playerBody.setType(BodyDef.BodyType.DynamicBody);
-            if (playerBody.getFixtureList().size > 0) {
+            if (!playerBody.getFixtureList().isEmpty()) {
                 playerBody.destroyFixture(playerBody.getFixtureList().get(0));
             }
         }
         CircleShape circleShape = new CircleShape();
-        circleShape.setRadius(16f / PIXELS_PER_METER);
+        circleShape.setRadius(16f / PIXELS_PER_METER);// 圆形碰撞体
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = circleShape;
         fixtureDef.density = 1f;
@@ -293,20 +294,39 @@ public class GameScreen implements Screen {
         fixtureDef.restitution = 0.1f;
         playerBody.createFixture(fixtureDef).setUserData("samurai");
         circleShape.dispose();
+
+        // 确保playerBody初始位置在边界内
+        playerBody.setTransform(GAME_WIDTH_METERS / 2f, GAME_HEIGHT_METERS / 2f, 0);
+        playerBody.setLinearVelocity(0,0);// 清除可能的速度
+        playerBody.setAngularVelocity(0);// 清除可能的角速度
+
     }
 
     private void createGround() {
+        // *** 修改：确保地块生成在边界内 ***
+        float margin = 1.0f; // 留出一点边距，避免紧贴边界
+        float minX = margin;
+        float maxX = GAME_WIDTH_METERS - margin;
+        float minY = margin;
+        float maxY = GAME_HEIGHT_METERS - margin;
+
         for (int i = 0; i < groundCount; i++) {
-            float x = MathUtils.random(0, 800 / PIXELS_PER_METER);
-            float y = MathUtils.random(0, 600 / PIXELS_PER_METER);
-            float width = MathUtils.random(50 / PIXELS_PER_METER, 150 / PIXELS_PER_METER);
-            float height = MathUtils.random(20 / PIXELS_PER_METER, 70 / PIXELS_PER_METER);
+            // 随机尺寸，但要确保整体在地块内
+            float maxWidth = (maxX - minX) / 2;// 最大半宽
+            float maxHeight = (maxY - minY) / 2;// 最大半高
+            float halfWidth = MathUtils.random(25 / PIXELS_PER_METER, Math.min(75 / PIXELS_PER_METER, maxWidth));
+            float halfHeight = MathUtils.random(10 / PIXELS_PER_METER, Math.min(35 / PIXELS_PER_METER, maxHeight));
+
+            // 随机位置，确保加上半宽/半高后仍在边界内
+            float x = MathUtils.random(minX + halfWidth, maxX - halfWidth);
+            float y = MathUtils.random(minY + halfHeight, maxY - halfHeight);
+
             BodyDef groundBodyDef = new BodyDef();
             groundBodyDef.type = BodyDef.BodyType.StaticBody;
             groundBodyDef.position.set(x, y);
             Body groundBody = world.createBody(groundBodyDef);
             PolygonShape groundBox = new PolygonShape();
-            groundBox.setAsBox(width / 2, height / 2);
+            groundBox.setAsBox(halfWidth, halfHeight);// 使用半宽半高
             groundBody.createFixture(groundBox, 0.0f).setUserData("ground");
             groundBodies.add(groundBody);
             groundBox.dispose();
@@ -382,8 +402,11 @@ public class GameScreen implements Screen {
 
         BodyDef enemyBodyDef = new BodyDef();
         enemyBodyDef.type = BodyDef.BodyType.DynamicBody;
-        float randomX = MathUtils.random(0, 800 / PIXELS_PER_METER);
-        float randomY = MathUtils.random(0, 600 / PIXELS_PER_METER);
+
+        // *** 确保敌人生成在边界内 ***
+        float margin = 2.0f;// 给敌人生成留更大边距，避免生成时就卡住
+        float randomX = MathUtils.random(margin, GAME_WIDTH_METERS - margin);
+        float randomY = MathUtils.random(margin, GAME_HEIGHT_METERS - margin);
         enemyBodyDef.position.set(randomX, randomY);
         enemyBody = world.createBody(enemyBodyDef);
 
@@ -399,89 +422,119 @@ public class GameScreen implements Screen {
     }
 
     private void handleInput() {
-        Vector2 velocity = new Vector2(0, 0);
+        Vector2 velocity = playerBody.getLinearVelocity();// 获取当前速度以保持平滑
+        velocity.set(0, 0);// 先重置，后面根据按键设置
         float speed = playerSpeed;
-        if (Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)) {
+
+        // 之前切换角色的逻辑确实有问题且CTRL键通常用于组合键。。。
+        // isKeyPressed会持续触发。所以用isKeyJustPressed。
+        if (Gdx.input.isKeyJustPressed(Input.Keys.CONTROL_LEFT)) {
             isPlayer1Active = !isPlayer1Active;
         }
+
+        // 猫猫控制逻辑
         if (isPlayer1Active) {
             if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)) speed = playerRunSpeed;
             if (Gdx.input.isKeyPressed(Input.Keys.W)) velocity.y = speed;
             if (Gdx.input.isKeyPressed(Input.Keys.S)) velocity.y = -speed;
             if (Gdx.input.isKeyPressed(Input.Keys.A)) velocity.x = -speed;
             if (Gdx.input.isKeyPressed(Input.Keys.D)) velocity.x = speed;
-            if (velocity.isZero()) currentAnimation = "idle";
-            else if (speed == playerSpeed) currentAnimation = "walk";
-            else currentAnimation = "run";
-        } else {
-            if (!isAttacking) {
-                if (Gdx.input.isKeyPressed(Input.Keys.J)) {
-                    if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-                        currentAnimation = "attack_down";
-                        isAttacking = true;
-                        playerStateTime = 0f;
-                    } else if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-                        currentAnimation = "attack_up";
-                        isAttacking = true;
-                        playerStateTime = 0f;
-                    } else if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-                        currentAnimation = "attack_left";
-                        isAttacking = true;
-                        playerStateTime = 0f;
-                    } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-                        currentAnimation = "attack_right";
-                        isAttacking = true;
-                        playerStateTime = 0f;
-                    }
-                } else {
-                    if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-                        velocity.y = speed;
-                        currentAnimation = "walk_up";
-                        lastDirection = "up";
-                    } else if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-                        velocity.y = -speed;
-                        currentAnimation = "walk_down";
-                        lastDirection = "down";
-                    } else if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-                        velocity.x = -speed;
-                        currentAnimation = "walk_left";
-                        lastDirection = "left";
-                    } else if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-                        velocity.x = speed;
-                        currentAnimation = "walk_right";
-                        lastDirection = "right";
-                    } else {
-                        currentAnimation = "idle_" + lastDirection;
-                    }
-                }
+
+            // 简单的状态判断
+            if (velocity.isZero(0.1f)) {// 加个小阈值判断静止
+                currentAnimation = "idle";
+            } else if (speed == playerSpeed) {
+                currentAnimation = "walk";
             } else {
-                velocity.set(0, 0);
-                Animation<TextureRegion> currentAnim = getCurrentAnimation();
-                if (currentAnim.isAnimationFinished(playerStateTime)) {
-                    isAttacking = false;
+                currentAnimation = "run";
+            }
+            // 猫猫动画不需要区分方向，这里简化
+            // 需要处理速度归一化，防止斜向移动过快
+            if (!velocity.isZero()) {
+                velocity.nor().scl(speed);
+            }
+
+        } else { // 武士控制逻辑
+            if (!isAttacking) {
+                boolean isMoving = false;
+                if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+                    velocity.y = speed;
+                    lastDirection = "up";
+                    isMoving = true;
+                }
+                if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+                    // 如果同时按下了 W 和 S，则 Y 速度为 0
+                    velocity.y = (velocity.y > 0) ? 0 : -speed;
+                    if (!isMoving) lastDirection = "down";// 只有在没按W时才更新方向为down
+                    isMoving = true;
+                }
+                if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+                    velocity.x = -speed;
+                    lastDirection = "left";
+                    isMoving = true;
+                }
+                if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+                    // 如果同时按下了 A 和 D，则 X 速度为 0
+                    velocity.x = (velocity.x < 0) ? 0 : speed;
+                    if (!isMoving || velocity.x < 0) lastDirection = "right";// 没按A或覆盖A时更新方向为right
+                    isMoving = true;
+                }
+
+                // 处理移动动画状态
+                if (isMoving) {
+                    currentAnimation = "walk_" + lastDirection;
+                    // 速度归一化，防止斜向移动过快
+                    velocity.nor().scl(speed);
+                } else {
                     currentAnimation = "idle_" + lastDirection;
+                }
+
+
+                // 处理攻击输入 (J 键)
+                if (Gdx.input.isKeyJustPressed(Input.Keys.J)) {// 使用 isKeyJustPressed 避免连续触发
+                    currentAnimation = "attack_" + lastDirection;// 根据最后移动方向决定攻击方向
+                    isAttacking = true;
+                    playerStateTime = 0f;// 重置攻击动画时间
+                    velocity.set(0, 0);// 攻击时停止移动
+                }
+
+            } else {// 正在攻击中
+                velocity.set(0, 0);// 攻击时不允许移动
+                Animation<TextureRegion> currentAnim = getCurrentAnimation();// 获取当前攻击动画
+                if (currentAnim != null && currentAnim.isAnimationFinished(playerStateTime)) {
+                    isAttacking = false;// 攻击动画播放完毕
+                    currentAnimation = "idle_" + lastDirection;// 恢复到静止站立状态
                 }
             }
         }
-        playerBody.setLinearVelocity(velocity);
+        playerBody.setLinearVelocity(velocity);// 应用最终计算出的速度
     }
 
+    // 获取当前Player的动画 (区分猫猫和武士)
     private Animation<TextureRegion> getCurrentAnimation() {
-        return switch (currentAnimation) {
-            case "walk_down" -> samuraiWalkDownAnimation;
-            case "walk_up" -> samuraiWalkUpAnimation;
-            case "walk_left" -> samuraiWalkLeftAnimation;
-            case "walk_right" -> samuraiWalkRightAnimation;
-            case "idle_down" -> samuraiIdleDownAnimation;
-            case "idle_up" -> samuraiIdleUpAnimation;
-            case "idle_left" -> samuraiIdleLeftAnimation;
-            case "idle_right" -> samuraiIdleRightAnimation;
-            case "attack_down" -> samuraiAttackDownAnimation;
-            case "attack_up" -> samuraiAttackUpAnimation;
-            case "attack_left" -> samuraiAttackLeftAnimation;
-            case "attack_right" -> samuraiAttackRightAnimation;
-            default -> samuraiIdleDownAnimation;
-        };
+        if (isPlayer1Active) {
+            return switch (currentAnimation) {
+                case "walk" -> playerWalkAnimation;
+                case "run" -> playerRunAnimation;
+                default -> playerIdleAnimation;
+            };
+        } else {
+            return switch (currentAnimation) {
+                case "walk_down" -> samuraiWalkDownAnimation;
+                case "walk_up" -> samuraiWalkUpAnimation;
+                case "walk_left" -> samuraiWalkLeftAnimation;
+                case "walk_right" -> samuraiWalkRightAnimation;
+                case "idle_down" -> samuraiIdleDownAnimation;
+                case "idle_up" -> samuraiIdleUpAnimation;
+                case "idle_left" -> samuraiIdleLeftAnimation;
+                case "idle_right" -> samuraiIdleRightAnimation;
+                case "attack_down" -> samuraiAttackDownAnimation;
+                case "attack_up" -> samuraiAttackUpAnimation;
+                case "attack_left" -> samuraiAttackLeftAnimation;
+                case "attack_right" -> samuraiAttackRightAnimation;
+                default -> samuraiIdleDownAnimation;
+            };
+        }
     }
 
     @Override
@@ -495,14 +548,27 @@ public class GameScreen implements Screen {
         playerStateTime += delta;
         enemyStateTime += delta;
 
-        // 更新摄像机位置，跟随玩家
+        // --- 更新摄像机位置，使其跟随玩家 ---
+        // 保持摄像机中心在玩家身上，但限制摄像机不超过边界
+        float camX = MathUtils.clamp(playerBody.getPosition().x * PIXELS_PER_METER,
+            GAME_WIDTH_PIXELS / 2f,
+            (GAME_WIDTH_METERS * PIXELS_PER_METER) - GAME_WIDTH_PIXELS / 2f); // 假设地图比屏幕大，这里需要调整
+        float camY = MathUtils.clamp(playerBody.getPosition().y * PIXELS_PER_METER,
+            GAME_HEIGHT_PIXELS / 2f,
+            (GAME_HEIGHT_METERS * PIXELS_PER_METER) - GAME_HEIGHT_PIXELS / 2f); // 同上
+
+        // 如果地图和屏幕一样大，则不需要 clamp，直接跟随
+        // camera.position.set(playerBody.getPosition().x * PIXELS_PER_METER, playerBody.getPosition().y * PIXELS_PER_METER, 0);
+
+        // 当前代码是固定大小的地图 (800x600)，所以直接让相机中心跟随玩家即可
         camera.position.set(playerBody.getPosition().x * PIXELS_PER_METER, playerBody.getPosition().y * PIXELS_PER_METER, 0);
         camera.update();
 
+        // --- 绘制 ---
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
 
-        // 绘制地块
+        // --- 绘制地块 ---
         for (Body groundBody : groundBodies) {
             float x = groundBody.getPosition().x * PIXELS_PER_METER;
             float y = groundBody.getPosition().y * PIXELS_PER_METER;
@@ -513,80 +579,95 @@ public class GameScreen implements Screen {
             shape.getVertex(1, vertex1);
             float width = vertex0.x * 2 * PIXELS_PER_METER;
             float height = vertex1.y * 2 * PIXELS_PER_METER;
-            Texture groundTexture = new Texture(Gdx.files.internal("ground.png"));
             batch.draw(groundTexture, x - width / 2, y - height / 2, width, height);
         }
 
-        // 绘制玩家角色
+
+        // --- 绘制玩家角色 ---
         TextureRegion currentFrame = getCurrentFrame(playerStateTime);
-        float x = playerBody.getPosition().x * PIXELS_PER_METER - currentFrame.getRegionWidth() / 2f;
-        float y = playerBody.getPosition().y * PIXELS_PER_METER - currentFrame.getRegionHeight() / 2f;
-        batch.draw(currentFrame, x, y);
+        if (currentFrame != null) {
+            float playerX = playerBody.getPosition().x * PIXELS_PER_METER - currentFrame.getRegionWidth() / 2f;
+            float playerY = playerBody.getPosition().y * PIXELS_PER_METER - currentFrame.getRegionHeight() / 2f;
+            batch.draw(currentFrame, playerX, playerY);
+        }
 
-        // 绘制敌方单位
-        TextureRegion enemyFrame = guanPinIdleDownAnimation.getKeyFrame(enemyStateTime, true);
-        float enemyX = enemyBody.getPosition().x * PIXELS_PER_METER - enemyFrame.getRegionWidth() / 2f;
-        float enemyY = enemyBody.getPosition().y * PIXELS_PER_METER - enemyFrame.getRegionHeight() / 2f;
-        batch.draw(enemyFrame, enemyX, enemyY);
+        // --- 绘制敌方单位 ---
+        // TODO: 实现敌人 AI 和动画状态切换
+        Animation<TextureRegion> enemyAnim = guanPinIdleDownAnimation;
+        TextureRegion enemyFrame = enemyAnim.getKeyFrame(enemyStateTime, true);
+        if (enemyFrame != null && enemyBody != null) {
+            float enemyX = enemyBody.getPosition().x * PIXELS_PER_METER - enemyFrame.getRegionWidth() / 2f;
+            float enemyY = enemyBody.getPosition().y * PIXELS_PER_METER - enemyFrame.getRegionHeight() / 2f;
+            batch.draw(enemyFrame, enemyX, enemyY);
+        }
 
         batch.end();
 
-        // 绘制玩家血量条
-        shapeRenderer.setProjectionMatrix(camera.combined);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
-        // 计算血量条的世界坐标（玩家头顶上方）
-        float barWidth = 50;// 血量条宽度
-        float barHeight = 5;// 血量条高度
-        float barX = x + (currentFrame.getRegionWidth() - barWidth) / 2;// 居中对齐玩家
-        float barY = y + currentFrame.getRegionHeight() + 6;// 在玩家头顶上方10个单位
+        // --- 绘制UI元素 (血条等) ---
+        // 使用独立的 SpriteBatch 和 Camera 可以避免坐标转换问题，但这里继续用世界坐标
+        shapeRenderer.setProjectionMatrix(camera.combined);// 确保和 batch 使用相同投影
 
-        // 先绘制背景矩形（白色）
-        shapeRenderer.setColor(Color.WHITE);
-        shapeRenderer.rect(barX, barY, barWidth, barHeight);
+        // --- 绘制玩家血量条 ---
+        if (currentFrame != null) {
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            float barWidth = 40;// 血量条宽度 (像素)
+            float barHeight = 5;// 血量条高度 (像素)
+            float barOffsetX = (currentFrame.getRegionWidth() - barWidth) / 2f;// 居中偏移
+            float barOffsetY = currentFrame.getRegionHeight() + 5;// 在头顶上方距离
+            float barX = (playerBody.getPosition().x * PIXELS_PER_METER) - currentFrame.getRegionWidth() / 2f + barOffsetX;
+            float barY = (playerBody.getPosition().y * PIXELS_PER_METER) - currentFrame.getRegionHeight() / 2f + barOffsetY;
 
-        // 再绘制血量矩形（红色）
-        float playerHealthPercentage = playerHealth / playerMaxHealth;
-        shapeRenderer.setColor(Color.RED);
-        shapeRenderer.rect(barX, barY, barWidth * playerHealthPercentage, barHeight);
+            // 背景 (灰色或白色)
+            shapeRenderer.setColor(Color.DARK_GRAY);
+            shapeRenderer.rect(barX, barY, barWidth, barHeight);
+            // 血量 (红色)
+            float playerHealthPercentage = playerHealth / playerMaxHealth;
+            shapeRenderer.setColor(Color.RED);
+            shapeRenderer.rect(barX, barY, barWidth * playerHealthPercentage, barHeight);
+            shapeRenderer.end();
 
-        shapeRenderer.end();
+            // 绘制血量百分比文字
+            batch.begin();
+            font.setColor(Color.WHITE);
+            font.draw(batch, String.format("%.0f%%", playerHealthPercentage * 100), barX + barWidth + 5, barY + barHeight); // 调整文字位置
+            batch.end();
+        }
 
-        // 绘制玩家血量百分比
-        batch.setProjectionMatrix(camera.combined);
-        batch.begin();
-        font.draw(batch, String.format("%.0f%%", playerHealthPercentage * 100), barX + barWidth + 5, barY + barHeight / 2);
-        batch.end();
 
-        // 绘制敌方血量条
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        // --- 绘制敌方血量条 ---
+        if (enemyFrame != null && enemyBody != null) {
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            float enemyBarWidth = 40;
+            float enemyBarHeight = 5;
+            float enemyBarOffsetX = (enemyFrame.getRegionWidth() - enemyBarWidth) / 2f;
+            float enemyBarOffsetY = enemyFrame.getRegionHeight() + 5;
+            float enemyBarX = (enemyBody.getPosition().x * PIXELS_PER_METER) - enemyFrame.getRegionWidth() / 2f + enemyBarOffsetX;
+            float enemyBarY = (enemyBody.getPosition().y * PIXELS_PER_METER) - enemyFrame.getRegionHeight() / 2f + enemyBarOffsetY;
 
-        // 先绘制背景矩形（白色）
-        float enemyHealthBarWidth = enemyFrame.getRegionWidth();
-        float enemyHealthBarHeight = 5;
-        float enemyHealthBarX = enemyX;
-        float enemyHealthBarY = enemyY + enemyFrame.getRegionHeight() + 5;
-        shapeRenderer.setColor(Color.WHITE);
-        shapeRenderer.rect(enemyHealthBarX, enemyHealthBarY, enemyHealthBarWidth, enemyHealthBarHeight);
+            shapeRenderer.setColor(Color.DARK_GRAY);
+            shapeRenderer.rect(enemyBarX, enemyBarY, enemyBarWidth, enemyBarHeight);
+            float enemyHealthPercentage = enemyHealth / enemyMaxHealth;
+            shapeRenderer.setColor(Color.RED);
+            shapeRenderer.rect(enemyBarX, enemyBarY, enemyBarWidth * enemyHealthPercentage, enemyBarHeight);
+            shapeRenderer.end();
 
-        // 再绘制血量矩形（红色）
-        float enemyHealthPercentage = enemyHealth / enemyMaxHealth;
-        shapeRenderer.setColor(Color.RED);
-        shapeRenderer.rect(enemyHealthBarX, enemyHealthBarY, enemyHealthBarWidth * enemyHealthPercentage, enemyHealthBarHeight);
+            batch.begin();
+            font.setColor(Color.WHITE);
+            font.draw(batch, String.format("%.0f%%", enemyHealthPercentage * 100), enemyBarX + enemyBarWidth + 5, enemyBarY + enemyBarHeight);
+            batch.end();
+        }
 
-        shapeRenderer.end();
 
-        // 绘制敌方血量百分比
-        batch.begin();
-        font.draw(batch, String.format("%.0f%%", enemyHealthPercentage * 100), enemyHealthBarX + enemyHealthBarWidth + 5, enemyHealthBarY + enemyHealthBarHeight / 2);
-        batch.end();
+        // --- 调试渲染器 ---
+        // 绘制 Box2D 调试信息 (应该在所有 batch.end() 之后)
+        debugRenderer.render(world, camera.combined.cpy().scale(PIXELS_PER_METER, PIXELS_PER_METER, 0));
 
-        // 检测ESC键是否按下以退出游戏
+
+        // --- 退出逻辑 ---
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             game.setScreen(new StartScreen(game));
         }
-
-        debugRenderer.render(world, camera.combined);
     }
 
     private TextureRegion getCurrentFrame(float stateTime) {
