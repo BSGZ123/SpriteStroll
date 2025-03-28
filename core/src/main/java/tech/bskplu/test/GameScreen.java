@@ -19,6 +19,14 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Array;
 
+import com.badlogic.gdx.ai.pfa.DefaultGraphPath;
+import com.badlogic.gdx.ai.pfa.GraphPath;
+import com.badlogic.gdx.ai.pfa.Heuristic;
+import com.badlogic.gdx.ai.pfa.indexed.IndexedAStarPathFinder;
+import tech.bskplu.test.ai.GameTiledGraph;
+import tech.bskplu.test.ai.GameTiledHeuristic;
+import tech.bskplu.test.ai.GameTiledNode;
+
 import java.util.Arrays;
 
 /**
@@ -108,9 +116,34 @@ public class GameScreen implements Screen {
     private float enemyHealth = 100f;
     private float enemyMaxHealth = 100f;
 
+    // --- AI 相关字段 ---
+    private static final float TILE_SIZE_METERS = 0.5f;// 定义网格大小（米），可以调整精度
+    private GameTiledGraph tiledGraph;
+    private IndexedAStarPathFinder<GameTiledNode> pathFinder;
+    private GraphPath<GameTiledNode> enemyPath;
+    private Heuristic<GameTiledNode> heuristic;
+
+    private float pathUpdateTimer = 0f;// 路径更新计时器
+    private static final float PATH_UPDATE_INTERVAL = 0.5f;// 每隔多少秒更新一次路径 (秒)
+    private int currentPathIndex = 0;// 敌人当前在路径中的目标节点索引
+    private Vector2 enemyTargetWorldPos = new Vector2();// 敌人路径节点的目标世界坐标
+    private static final float ENEMY_FOLLOW_SPEED = 1.5f;// 敌人移动速度 (米/秒)
+    private static final float ENEMY_ARRIVAL_TOLERANCE = 0.2f;// 到达路径节点的容忍距离 (米)
+    private static final float PLAYER_CATCH_DISTANCE = 0.8f;// 判定抓住玩家的距离 (米)
+
+    private boolean playerCaught = false;// 玩家是否被抓住
+    private float gameOverTimer = 0f;// 游戏结束倒计时
+    private static final float GAME_OVER_DELAY = 3.0f;// 抓住后的延迟时间 (秒)
+    private BitmapFont messageFont;// 用于显示 "已抓获!" 消息
+    private ShapeRenderer pathRenderer;// (可选) 用于绘制调试路径
+
+//------------------------------------------------------
+
+
     // 绘制工具
     private ShapeRenderer shapeRenderer;
     private BitmapFont font;
+
 
     public GameScreen(Game game) {
         this.game = game;
@@ -131,10 +164,25 @@ public class GameScreen implements Screen {
         createGround();
         createGuanPin();
 
+        // --- 初始化 AI ---
+        heuristic = new GameTiledHeuristic();
+        // **确保在网格物创建后初始化导航图**
+        tiledGraph = new GameTiledGraph(GAME_WIDTH_METERS, GAME_HEIGHT_METERS, TILE_SIZE_METERS, groundBodies);
+        pathFinder = new IndexedAStarPathFinder<>(tiledGraph, true); // true表示允许对角线
+        enemyPath = new DefaultGraphPath<>();
+
+
         music = Gdx.audio.newMusic(Gdx.files.internal("LanTingXu.mp3"));
 
         shapeRenderer = new ShapeRenderer();
         font = new BitmapFont();
+
+
+        messageFont = new BitmapFont(); // 初始化消息字体
+        messageFont.setColor(Color.YELLOW);
+        messageFont.getData().setScale(2f); // 放大字体
+
+        pathRenderer = new ShapeRenderer(); // 初始化路径绘制器
     }
 
     // 创建场景边界
@@ -172,7 +220,6 @@ public class GameScreen implements Screen {
         // --- 释放形状资源 ---
         boundaryShape.dispose();
     }
-
 
 
     private void createPlayer() {
@@ -297,7 +344,7 @@ public class GameScreen implements Screen {
 
         // 确保playerBody初始位置在边界内
         playerBody.setTransform(GAME_WIDTH_METERS / 2f, GAME_HEIGHT_METERS / 2f, 0);
-        playerBody.setLinearVelocity(0,0);// 清除可能的速度
+        playerBody.setLinearVelocity(0, 0);// 清除可能的速度
         playerBody.setAngularVelocity(0);// 清除可能的角速度
 
     }
@@ -426,6 +473,12 @@ public class GameScreen implements Screen {
         velocity.set(0, 0);// 先重置，后面根据按键设置
         float speed = playerSpeed;
 
+        // 如果玩家被抓住，禁止玩家移动
+        if (playerCaught) {
+            playerBody.setLinearVelocity(0, 0);
+            return;
+        }
+
         // 之前切换角色的逻辑确实有问题且CTRL键通常用于组合键。。。
         // isKeyPressed会持续触发。所以用isKeyJustPressed。
         if (Gdx.input.isKeyJustPressed(Input.Keys.CONTROL_LEFT)) {
@@ -537,6 +590,224 @@ public class GameScreen implements Screen {
         }
     }
 
+    // --- 更新敌人 AI 的方法 ---
+    private void updateEnemyAI(float delta) {
+        if (playerCaught || enemyBody == null || playerBody == null) {
+            if (enemyBody != null) enemyBody.setLinearVelocity(0, 0);// 抓住后停止敌人
+            return;
+        }
+
+        // --- 1. 检查是否抓住玩家 ---
+        float distanceToPlayer = enemyBody.getPosition().dst(playerBody.getPosition());
+        if (distanceToPlayer <= PLAYER_CATCH_DISTANCE) {
+            playerCaught = true;
+            gameOverTimer = GAME_OVER_DELAY;
+            Gdx.app.log("AI", "Player Caught!");
+            enemyBody.setLinearVelocity(0, 0);// 停止敌人
+            // 可以播放音效等
+            return;// 不再进行路径查找或移动
+        }
+
+        // --- 2. 定期更新路径 ---
+        pathUpdateTimer -= delta;
+        if (pathUpdateTimer <= 0f) {
+            pathUpdateTimer = PATH_UPDATE_INTERVAL;
+            updateEnemyPath();
+        }
+
+        // --- 3. 跟随路径 ---
+        followPath(delta);
+
+        // --- 4. 更新敌人动画 (根据速度方向) ---
+        updateEnemyAnimation();
+    }
+
+
+    // --- 更新敌人路径 ---
+    private void updateEnemyPath() {
+        // 获取起点和终点节点
+        Vector2 enemyPos = enemyBody.getPosition();
+        Vector2 playerPos = playerBody.getPosition();
+
+        int startX = tiledGraph.worldToTileX(enemyPos.x);
+        int startY = tiledGraph.worldToTileY(enemyPos.y);
+        int endX = tiledGraph.worldToTileX(playerPos.x);
+        int endY = tiledGraph.worldToTileY(playerPos.y);
+
+        GameTiledNode startNode = tiledGraph.getNode(startX, startY);
+        GameTiledNode endNode = tiledGraph.getNode(endX, endY);
+
+        // 确保起点和终点有效且不是墙壁
+        if (startNode != null && startNode.type != GameTiledGraph.TILE_WALL &&
+            endNode != null && endNode.type != GameTiledGraph.TILE_WALL) {
+            enemyPath.clear();// 清空旧路径
+            pathFinder.searchNodePath(startNode, endNode, heuristic, enemyPath);
+            currentPathIndex = 0;// 从路径起点开始 (或者 1 如果起点就是当前位置)
+            // Gdx.app.log("AI", "Path calculated. Nodes: " + enemyPath.getCount());
+            if (enemyPath.getCount() > 1) { // 路径至少包含起点和下一个目标点
+                currentPathIndex = 1;// 指向路径上的下一个节点
+                GameTiledNode nextNode = enemyPath.get(currentPathIndex);
+                tiledGraph.tileToWorldCenter(nextNode.x, nextNode.y, enemyTargetWorldPos);// 获取下一个节点的世界坐标
+            } else {
+                // 没有路径或路径只有一个节点(原地)
+                currentPathIndex = 0;
+                enemyPath.clear();// 清除无效路径
+            }
+
+        } else {
+            enemyPath.clear();// 无效起点或终点，清除路径
+            currentPathIndex = 0;
+            Gdx.app.log("AI", "Path calculation failed: Invalid start/end node or wall.");
+        }
+    }
+
+
+    // --- 让敌人跟随路径 ---
+    private void followPath(float delta) {
+        if (enemyPath.getCount() == 0 || currentPathIndex >= enemyPath.getCount()) {
+            // 没有路径或已到达终点
+            enemyBody.setLinearVelocity(0, 0);// 停止移动
+            return;
+        }
+
+        // 获取当前目标节点的世界坐标 (已在 updateEnemyPath 中设置)
+        // GameTiledNode targetNode = enemyPath.get(currentPathIndex);
+        // Vector2 targetWorldPos = tiledGraph.tileToWorldCenter(targetNode.x, targetNode.y, tmpVec);
+
+        Vector2 enemyPos = enemyBody.getPosition();
+        float distanceToTarget = enemyPos.dst(enemyTargetWorldPos);
+
+        // 检查是否到达当前路径节点
+        if (distanceToTarget <= ENEMY_ARRIVAL_TOLERANCE) {
+            currentPathIndex++;// 移动到路径的下一个节点
+            if (currentPathIndex >= enemyPath.getCount()) {
+                // 到达路径终点
+                enemyBody.setLinearVelocity(0, 0);
+                // Gdx.app.log("AI", "Path finished.");
+                return;
+            } else {
+                // 设置新的目标节点世界坐标
+                GameTiledNode nextNode = enemyPath.get(currentPathIndex);
+                tiledGraph.tileToWorldCenter(nextNode.x, nextNode.y, enemyTargetWorldPos);
+            }
+        }
+
+        // 计算朝向目标节点的向量
+        Vector2 direction = GameTiledGraph.tmpVec.set(enemyTargetWorldPos).sub(enemyPos).nor();
+
+        // 设置敌人速度
+        enemyBody.setLinearVelocity(direction.scl(ENEMY_FOLLOW_SPEED));
+    }
+
+    // --- 新增：更新敌人动画状态 ---
+    private String enemyCurrentAnimation = "idle_down";// 敌人动画状态
+    private String enemyLastDirection = "down";// 敌人最后移动方向
+
+    private void updateEnemyAnimation() {
+        if (enemyBody == null) return;
+
+        Vector2 velocity = enemyBody.getLinearVelocity();
+        boolean isMoving = !velocity.isZero(0.1f);// 检查是否在移动
+
+        if (isMoving) {
+            // 根据速度决定主要方向
+            if (Math.abs(velocity.x) > Math.abs(velocity.y)) {
+                enemyLastDirection = (velocity.x > 0) ? "right" : "left";
+            } else {
+                enemyLastDirection = (velocity.y > 0) ? "up" : "down";
+            }
+            enemyCurrentAnimation = "walk_" + enemyLastDirection;
+        } else {
+            enemyCurrentAnimation = "idle_" + enemyLastDirection;
+        }
+        // 这里没有实现敌人的攻击动画，仅移动和站立
+    }
+
+    // --- 新增：获取敌人当前帧 ---
+    private TextureRegion getEnemyCurrentFrame(float stateTime) {
+        Animation<TextureRegion> anim = switch (enemyCurrentAnimation) {
+            case "walk_down" -> guanPinWalkDownAnimation;
+            case "walk_up" -> guanPinWalkUpAnimation;
+            case "walk_left" -> guanPinWalkLeftAnimation;
+            case "walk_right" -> guanPinWalkRightAnimation;
+            case "idle_down" -> guanPinIdleDownAnimation;
+            case "idle_up" -> guanPinIdleUpAnimation;
+            case "idle_left" -> guanPinIdleLeftAnimation;
+            case "idle_right" -> guanPinIdleRightAnimation;
+            // case "attack_..." -> ... // 如果有攻击动画
+            default -> guanPinIdleDownAnimation;
+        };
+        return anim.getKeyFrame(stateTime, true);
+    }
+
+    // --- 绘制AI调试信息 (可选) ---
+    private void drawAIDebug() {
+        // 使用独立的 ShapeRenderer 绘制路径和网格，避免与游戏 batch 冲突
+        // 确保使用正确的投影矩阵
+        pathRenderer.setProjectionMatrix(camera.combined);
+        pathRenderer.begin(ShapeRenderer.ShapeType.Line);
+
+        // 1. 绘制网格 (可选, 可能影响性能)
+        /*
+        pathRenderer.setColor(Color.DARK_GRAY);
+        float worldWidth = tiledGraph.getWidth() * tiledGraph.getTileSize();
+        float worldHeight = tiledGraph.getHeight() * tiledGraph.getTileSize();
+        for (int x = 0; x <= tiledGraph.getWidth(); x++) {
+            pathRenderer.line(x * tiledGraph.getTileSize(), 0, x * tiledGraph.getTileSize(), worldHeight);
+        }
+        for (int y = 0; y <= tiledGraph.getHeight(); y++) {
+            pathRenderer.line(0, y * tiledGraph.getTileSize(), worldWidth, y * tiledGraph.getTileSize());
+        }
+        */
+
+
+        // 2. 绘制网格物(可选)
+        pathRenderer.setColor(Color.RED);
+        for (GameTiledNode node : tiledGraph.getNodes()) {
+            if (node.type == GameTiledGraph.TILE_WALL) {
+                float tileX = node.x * tiledGraph.getTileSize();
+                float tileY = node.y * tiledGraph.getTileSize();
+                pathRenderer.rect(tileX, tileY, tiledGraph.getTileSize(), tiledGraph.getTileSize());
+            }
+        }
+
+
+        // 3. 绘制当前路径
+        if (enemyPath.getCount() > 0) {
+            pathRenderer.setColor(Color.CYAN);
+            Vector2 prevPoint = null;
+            for (GameTiledNode node : enemyPath) {
+                Vector2 currentPoint = tiledGraph.tileToWorldCenter(node.x, node.y, new Vector2());// 创建新向量或使用池
+                if (prevPoint != null) {
+                    pathRenderer.line(prevPoint.scl(PIXELS_PER_METER), currentPoint.scl(PIXELS_PER_METER));// 从米转换为像素绘制
+                    prevPoint.set(currentPoint.scl(1 / PIXELS_PER_METER));// 转换回米存储
+                } else {
+                    prevPoint = new Vector2(currentPoint);
+                }
+                // 绘制节点中心点 (可选)
+                pathRenderer.circle(currentPoint.x * PIXELS_PER_METER, currentPoint.y * PIXELS_PER_METER, 2);
+            }
+        }
+        pathRenderer.end();
+
+        // --- 绘制像素单位的路径 (直接用像素坐标) ---
+        pathRenderer.begin(ShapeRenderer.ShapeType.Line);
+        if (enemyPath.getCount() > 0) {
+            pathRenderer.setColor(Color.LIME);// 换个颜色区分
+            Vector2 prevPixelPoint = null;
+            for (GameTiledNode node : enemyPath) {
+                Vector2 worldCenter = tiledGraph.tileToWorldCenter(node.x, node.y, GameTiledGraph.tmpVec);
+                Vector2 currentPixelPoint = new Vector2(worldCenter.x * PIXELS_PER_METER, worldCenter.y * PIXELS_PER_METER);
+                if (prevPixelPoint != null) {
+                    pathRenderer.line(prevPixelPoint, currentPixelPoint);
+                }
+                prevPixelPoint = currentPixelPoint;
+            }
+        }
+        pathRenderer.end();
+
+    }
+
     @Override
     public void render(float delta) {
         Gdx.gl.glClearColor(0, 0, 0, 1);
@@ -544,6 +815,10 @@ public class GameScreen implements Screen {
 
         // 处理输入和物理模拟
         handleInput();
+
+        // 更新AI状态 (路径查找、移动、抓捕检测)
+        updateEnemyAI(delta);
+
         world.step(timeStep, velocityIterations, positionIterations);
         playerStateTime += delta;
         enemyStateTime += delta;
@@ -552,15 +827,11 @@ public class GameScreen implements Screen {
         // 保持摄像机中心在玩家身上，但限制摄像机不超过边界
         float camX = MathUtils.clamp(playerBody.getPosition().x * PIXELS_PER_METER,
             GAME_WIDTH_PIXELS / 2f,
-            (GAME_WIDTH_METERS * PIXELS_PER_METER) - GAME_WIDTH_PIXELS / 2f); // 假设地图比屏幕大，这里需要调整
+            (GAME_WIDTH_METERS * PIXELS_PER_METER) - GAME_WIDTH_PIXELS / 2f);// 假设地图比屏幕大，这里需要调整
         float camY = MathUtils.clamp(playerBody.getPosition().y * PIXELS_PER_METER,
             GAME_HEIGHT_PIXELS / 2f,
-            (GAME_HEIGHT_METERS * PIXELS_PER_METER) - GAME_HEIGHT_PIXELS / 2f); // 同上
+            (GAME_HEIGHT_METERS * PIXELS_PER_METER) - GAME_HEIGHT_PIXELS / 2f);// 同上
 
-        // 如果地图和屏幕一样大，则不需要 clamp，直接跟随
-        // camera.position.set(playerBody.getPosition().x * PIXELS_PER_METER, playerBody.getPosition().y * PIXELS_PER_METER, 0);
-
-        // 当前代码是固定大小的地图 (800x600)，所以直接让相机中心跟随玩家即可
         camera.position.set(playerBody.getPosition().x * PIXELS_PER_METER, playerBody.getPosition().y * PIXELS_PER_METER, 0);
         camera.update();
 
@@ -592,9 +863,9 @@ public class GameScreen implements Screen {
         }
 
         // --- 绘制敌方单位 ---
-        // TODO: 实现敌人 AI 和动画状态切换
         Animation<TextureRegion> enemyAnim = guanPinIdleDownAnimation;
-        TextureRegion enemyFrame = enemyAnim.getKeyFrame(enemyStateTime, true);
+        //TextureRegion enemyFrame = enemyAnim.getKeyFrame(enemyStateTime, true);
+        TextureRegion enemyFrame = getEnemyCurrentFrame(enemyStateTime);// 使用新获取敌人帧的方法
         if (enemyFrame != null && enemyBody != null) {
             float enemyX = enemyBody.getPosition().x * PIXELS_PER_METER - enemyFrame.getRegionWidth() / 2f;
             float enemyY = enemyBody.getPosition().y * PIXELS_PER_METER - enemyFrame.getRegionHeight() / 2f;
@@ -663,6 +934,30 @@ public class GameScreen implements Screen {
         // 绘制 Box2D 调试信息 (应该在所有 batch.end() 之后)
         debugRenderer.render(world, camera.combined.cpy().scale(PIXELS_PER_METER, PIXELS_PER_METER, 0));
 
+        // --- (可选) 绘制 AI 调试信息 ---
+        drawAIDebug(); // 取消注释以显示网格和路径
+
+
+        // --- 处理游戏结束逻辑 ---
+        if (playerCaught) {
+            // 绘制 "Caught!" 消息
+            // 需要设置一个独立的 UI 摄像机或在屏幕坐标系绘制
+            // 简单起见，我们在世界中心附近绘制（可能被遮挡）
+            batch.setProjectionMatrix(camera.combined); // 确保投影正确
+            batch.begin();
+            messageFont.draw(batch, "Caught!",
+                camera.position.x - 50, // 大致在屏幕中心
+                camera.position.y);
+            batch.end();
+
+
+            // 更新计时器并检查是否结束游戏
+            gameOverTimer -= delta;
+            if (gameOverTimer <= 0f) {
+                game.setScreen(new StartScreen(game)); // 返回开始菜单
+            }
+        }
+
 
         // --- 退出逻辑 ---
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
@@ -724,5 +1019,7 @@ public class GameScreen implements Screen {
         music.dispose();
         shapeRenderer.dispose();
         font.dispose();
+        messageFont.dispose(); // 清理新添加的字体
+        pathRenderer.dispose(); // 清理路径绘制器
     }
 }
