@@ -1,4 +1,5 @@
 package tech.bskplu.test.ai;
+import java.util.Objects;
 
 /**
  * @ClassName: GameTiledNode
@@ -64,9 +65,8 @@ public class GameTiledNode {
 
     @Override
     public int hashCode() {
-        // 使用一个简单的哈希组合
-        int result = x;
-        result = 31 * result + y;
-        return result;
+        // 使用一个简单的哈希组合(手动计算已放弃)
+        // 基于坐标计算哈希码
+        return Objects.hash(x, y);
     }
 }
