@@ -31,7 +31,7 @@ public class TGameScreen implements Screen {
     private OrthographicCamera camera;
     private WorldManager worldManager;
     private Box2DDebugRenderer debugRenderer;
-    private static final float PIXELS_PER_METER = 32f;
+    public static final float PIXELS_PER_METER = 32f;
     private float timeStep = 1 / 60f;
     private int velocityIterations = 6;
     private int positionIterations = 2;
@@ -128,8 +128,25 @@ public class TGameScreen implements Screen {
         batch.end();
 
         // 绘制 UI
-        uiManager.drawHealthBar(batch, player.getPlayerBody().getPosition(), 100f, 100f, playerFrame.getRegionWidth(), playerFrame.getRegionHeight(), (playerFrame.getRegionWidth() - 40) / 2f, playerFrame.getRegionHeight() + 5);
-        uiManager.drawHealthBar(batch, enemy.getEnemyBody().getPosition(), 100f, 100f, enemyFrame.getRegionWidth(), enemyFrame.getRegionHeight(), (enemyFrame.getRegionWidth() - 40) / 2f, enemyFrame.getRegionHeight() + 5);
+        uiManager.drawHealthBar(batch,
+            camera,
+            player.getPlayerBody().getPosition(),
+            100f,
+            100f,
+            playerFrame.getRegionWidth(),
+            playerFrame.getRegionHeight(),
+            (playerFrame.getRegionWidth() - 40) / 2f,
+            playerFrame.getRegionHeight() + 5);
+
+        uiManager.drawHealthBar(batch,
+            camera,
+            enemy.getEnemyBody().getPosition(),
+            100f,
+            100f,
+            enemyFrame.getRegionWidth(),
+            enemyFrame.getRegionHeight(),
+            (enemyFrame.getRegionWidth() - 40) / 2f,
+            enemyFrame.getRegionHeight() + 5);
 
         debugRenderer.render(worldManager.getWorld(), camera.combined.cpy().scale(PIXELS_PER_METER, PIXELS_PER_METER, 0));
 

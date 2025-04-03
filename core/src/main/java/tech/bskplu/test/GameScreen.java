@@ -901,7 +901,7 @@ public class GameScreen implements Screen {
             // 绘制血量百分比文字
             batch.begin();
             font.setColor(Color.WHITE);
-            font.draw(batch, String.format("%.0f%%", playerHealthPercentage * 100), barX + barWidth + 5, barY + barHeight); // 调整文字位置
+            font.draw(batch, String.format("%.0f%%", playerHealthPercentage * 100), barX + barWidth + 5, barY + barHeight);
             batch.end();
         }
 

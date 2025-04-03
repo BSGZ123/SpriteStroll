@@ -1,10 +1,14 @@
 package tech.bskplu.test.manager;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
+
+import static tech.bskplu.test.TGameScreen.PIXELS_PER_METER;
+
 /**
  * @ClassName: UIManager
  * @Description: 管理 UI 元素，如血条和消息
@@ -31,6 +35,7 @@ public class UIManager {
     /**
      * 绘制血条
      * @param batch SpriteBatch 用于绘制文字
+     * @param camera 摄像机
      * @param position 实体位置
      * @param health 当前血量
      * @param maxHealth 最大血量
@@ -39,12 +44,22 @@ public class UIManager {
      * @param offsetX X 偏移
      * @param offsetY Y 偏移
      */
-    public void drawHealthBar(SpriteBatch batch, Vector2 position, float health, float maxHealth, float width, float height, float offsetX, float offsetY) {
+    public void drawHealthBar(SpriteBatch batch,
+                              OrthographicCamera camera,
+                              Vector2 position,
+                              float health,
+                              float maxHealth,
+                              float width,
+                              float height,
+                              float offsetX,
+                              float offsetY) {
+        // ShapeRenderer 和 SpriteBatch 需要使用相同的投影矩阵
+        shapeRenderer.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         float barWidth = 40;
         float barHeight = 5;
-        float barX = position.x - width / 2f + offsetX;
-        float barY = position.y - height / 2f + offsetY;
+        float barX = (position.x * PIXELS_PER_METER) - width / 2f + offsetX;
+        float barY = (position.y * PIXELS_PER_METER) - height / 2f + offsetY;
 
         shapeRenderer.setColor(Color.DARK_GRAY);
         shapeRenderer.rect(barX, barY, barWidth, barHeight);
