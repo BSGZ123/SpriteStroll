@@ -9,38 +9,38 @@ import com.badlogic.gdx.physics.box2d.*;
 import java.util.Arrays;
 /**
  * @ClassName: Player
- * @Description: 玩家逻辑管理
+ * @Description: 管理玩家逻辑，包括移动、动画和攻击
  * @Author BsKPLu
  * @Date 2025/4/2
  * @Version 1.1
  */
 public class Player {
-    private Body playerBody;                    // 玩家的物理身体
-    private Texture playerTexture;              // 猫猫角色纹理
-    private Animation<TextureRegion> playerIdleAnimation;  // 猫猫 idle 动画
-    private Animation<TextureRegion> playerWalkAnimation;  // 猫猫 walk 动画
-    private Animation<TextureRegion> playerRunAnimation;   // 猫猫 run 动画
-    private Texture samuraiTexture;             // 武士角色纹理
-    private Animation<TextureRegion> samuraiWalkDownAnimation;  // 武士向下走动画
-    private Animation<TextureRegion> samuraiWalkUpAnimation;    // 武士向上走动画
-    private Animation<TextureRegion> samuraiWalkLeftAnimation;  // 武士向左走动画
-    private Animation<TextureRegion> samuraiWalkRightAnimation; // 武士向右走动画
-    private Animation<TextureRegion> samuraiIdleDownAnimation;  // 武士向下 idle 动画
-    private Animation<TextureRegion> samuraiIdleUpAnimation;    // 武士向上 idle 动画
-    private Animation<TextureRegion> samuraiIdleLeftAnimation;  // 武士向左 idle 动画
-    private Animation<TextureRegion> samuraiIdleRightAnimation; // 武士向右 idle 动画
-    private Texture attackTexture;              // 武士攻击纹理
-    private Animation<TextureRegion> samuraiAttackDownAnimation;  // 武士向下攻击动画
-    private Animation<TextureRegion> samuraiAttackUpAnimation;    // 武士向上攻击动画
-    private Animation<TextureRegion> samuraiAttackLeftAnimation;  // 武士向左攻击动画
-    private Animation<TextureRegion> samuraiAttackRightAnimation; // 武士向右攻击动画
-    private float playerStateTime = 0f;         // 动画状态时间
-    private String currentAnimation = "idle_down"; // 当前动画状态
-    private String lastDirection = "down";      // 最后移动方向
-    private float playerSpeed = 2f;             // 普通移动速度 (米/秒)
-    private float playerRunSpeed = 5f;          // 奔跑速度 (米/秒)
-    private boolean isPlayer1Active = false;    // 是否激活猫猫角色 (否则为武士)
-    private boolean isAttacking = false;        // 是否正在攻击
+    private Body playerBody;// 玩家的物理身体
+    private Texture playerTexture;// 猫猫角色纹理
+    private Animation<TextureRegion> playerIdleAnimation;
+    private Animation<TextureRegion> playerWalkAnimation;
+    private Animation<TextureRegion> playerRunAnimation;
+    private Texture samuraiTexture;// 武士角色纹理
+    private Animation<TextureRegion> samuraiWalkDownAnimation;
+    private Animation<TextureRegion> samuraiWalkUpAnimation;
+    private Animation<TextureRegion> samuraiWalkLeftAnimation;
+    private Animation<TextureRegion> samuraiWalkRightAnimation;
+    private Animation<TextureRegion> samuraiIdleDownAnimation;
+    private Animation<TextureRegion> samuraiIdleUpAnimation;
+    private Animation<TextureRegion> samuraiIdleLeftAnimation;
+    private Animation<TextureRegion> samuraiIdleRightAnimation;
+    private Texture attackTexture;// 武士攻击纹理
+    private Animation<TextureRegion> samuraiAttackDownAnimation;
+    private Animation<TextureRegion> samuraiAttackUpAnimation;
+    private Animation<TextureRegion> samuraiAttackLeftAnimation;
+    private Animation<TextureRegion> samuraiAttackRightAnimation;
+    private float playerStateTime = 0f;// 动画状态时间
+    private String currentAnimation = "idle_down";// 当前动画状态
+    private String lastDirection = "down";// 最后移动方向
+    private float playerSpeed = 2f;// 普通移动速度 (米/秒)
+    private float playerRunSpeed = 5f;// 奔跑速度 (米/秒)
+    private boolean isPlayer1Active = false;// 是否激活猫猫角色 (否则为武士)
+    private boolean isAttacking = false;// 是否正在攻击
 
     /**
      * 构造函数：初始化玩家并创建物理身体和动画
@@ -301,7 +301,6 @@ public class Player {
         return isAttacking ? anim.getKeyFrame(stateTime, false) : anim.getKeyFrame(stateTime, true);
     }
 
-    // Getter 和 Setter
     public Body getPlayerBody() { return playerBody; }
     public float getPlayerStateTime() { return playerStateTime; }
     public void setPlayerStateTime(float playerStateTime) { this.playerStateTime = playerStateTime; }
