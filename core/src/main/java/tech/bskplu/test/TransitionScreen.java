@@ -45,7 +45,7 @@ public class TransitionScreen implements Screen {
 
         // 延时3秒后切换到战斗场景
         if (elapsedTime >= 3f) {
-            game.setScreen(new GameScreen(game));
+            game.setScreen(new TGameScreen(game));
         }
     }
 

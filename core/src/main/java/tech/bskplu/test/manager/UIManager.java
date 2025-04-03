@@ -1,4 +1,5 @@
 package tech.bskplu.test.manager;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -53,6 +54,7 @@ public class UIManager {
         shapeRenderer.rect(barX, barY, barWidth * healthPercentage, barHeight);
         shapeRenderer.end();
 
+        //Gdx.app.log("HealthBar", "position: " + position.x + ", " + position.y + ", width: " + width + ", height: " + height);
         batch.begin();
         font.setColor(Color.WHITE);
         font.draw(batch, String.format("%.0f%%", healthPercentage * 100), barX + barWidth + 5, barY + barHeight);
