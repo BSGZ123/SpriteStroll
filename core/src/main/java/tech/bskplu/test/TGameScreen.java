@@ -154,7 +154,7 @@ public class TGameScreen implements Screen {
             uiManager.drawMessage(batch, "Caught!", camera.position.x - 50, camera.position.y);
             enemy.setGameOverTimer(enemy.getGameOverTimer() - delta);
             if (enemy.getGameOverTimer() <= 0f) {
-                game.setScreen(new BattleScreen(game));
+                game.setScreen(new BattleScreen(game, player, enemy));
             }
         }
 

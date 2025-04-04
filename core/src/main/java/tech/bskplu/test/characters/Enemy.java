@@ -290,6 +290,9 @@ public class Enemy {
     }
 
     public Body getEnemyBody() { return enemyBody; }
+    public void setEnemyBody(Body enemyBody) {
+        this.enemyBody = enemyBody;
+    }
     public float getEnemyStateTime() { return enemyStateTime; }
     public void setEnemyStateTime(float enemyStateTime) { this.enemyStateTime = enemyStateTime; }
     public boolean isPlayerCaught() { return playerCaught; }

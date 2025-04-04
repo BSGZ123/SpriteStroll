@@ -302,6 +302,9 @@ public class Player {
     }
 
     public Body getPlayerBody() { return playerBody; }
+    public void setPlayerBody(Body playerBody) {
+        this.playerBody = playerBody;
+    }
     public float getPlayerStateTime() { return playerStateTime; }
     public void setPlayerStateTime(float playerStateTime) { this.playerStateTime = playerStateTime; }
 }
