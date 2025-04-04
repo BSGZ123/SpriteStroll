@@ -1,5 +1,4 @@
 package tech.bskplu.test.manager;
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -17,9 +16,9 @@ import static tech.bskplu.test.TGameScreen.PIXELS_PER_METER;
  * @Version 1.1
  */
 public class UIManager {
-    private ShapeRenderer shapeRenderer;         // 用于绘制血条
-    private BitmapFont font;                    // 用于绘制文字
-    private BitmapFont messageFont;             // 用于绘制消息
+    private ShapeRenderer shapeRenderer;// 用于绘制血条
+    private BitmapFont font;// 用于绘制文字
+    private BitmapFont messageFont;// 用于绘制消息
 
     /**
      * 构造函数：初始化渲染器和字体

@@ -11,11 +11,11 @@ import com.badlogic.gdx.utils.Array;
  * @Version 1.1
  */
 public class WorldManager {
-    private World world;                       // Box2D 物理世界
-    private Array<Body> groundBodies = new Array<>(); // 地面物体列表
-    private static final float PIXELS_PER_METER = 32f; // 像素到米的转换比例
-    private static final float GAME_WIDTH_METERS = 800f / PIXELS_PER_METER; // 游戏宽度 (米)
-    private static final float GAME_HEIGHT_METERS = 600f / PIXELS_PER_METER; // 游戏高度 (米)
+    private World world;// Box2D 物理世界
+    private Array<Body> groundBodies = new Array<>();// 地面物体列表
+    private static final float PIXELS_PER_METER = 32f;// 像素到米的转换比例
+    private static final float GAME_WIDTH_METERS = 800f / PIXELS_PER_METER;// 游戏宽度 (米)
+    private static final float GAME_HEIGHT_METERS = 600f / PIXELS_PER_METER;// 游戏高度 (米)
 
     /**
      * 构造函数：初始化物理世界并创建边界和地面

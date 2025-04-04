@@ -11,9 +11,9 @@ import tech.bskplu.test.ai.GameTiledNode;
  * @Version 1.1
  */
 public class AIManager {
-    private GameTiledGraph tiledGraph;          // 导航图
-    private IndexedAStarPathFinder<GameTiledNode> pathFinder; // A* 寻路器
-    private GameTiledHeuristic heuristic;       // 启发式函数
+    private GameTiledGraph tiledGraph;// 导航图
+    private IndexedAStarPathFinder<GameTiledNode> pathFinder;// A* 寻路器
+    private GameTiledHeuristic heuristic;// 启发式函数
 
     /**
      * 构造函数：初始化 AI 管理器
@@ -25,9 +25,7 @@ public class AIManager {
         pathFinder = new IndexedAStarPathFinder<>(tiledGraph, true);
     }
 
-    // Getter
     public IndexedAStarPathFinder<GameTiledNode> getPathFinder() { return pathFinder; }
-    public GameTiledHeuristic getHeuristic() { return heuristic; }
 
     public GameTiledGraph getTiledGraph() {
         return tiledGraph;

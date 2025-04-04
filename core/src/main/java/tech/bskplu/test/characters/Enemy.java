@@ -47,7 +47,7 @@ public class Enemy {
     private Vector2 enemyTargetWorldPos = new Vector2();// 目标世界坐标
     private static final float ENEMY_FOLLOW_SPEED = 1.5f;// 敌人跟随速度 (米/秒)
     private static final float ENEMY_ARRIVAL_TOLERANCE = 0.2f;// 到达容忍距离 (米)
-    private static final float PLAYER_CATCH_DISTANCE = 0.8f;// 抓住玩家的距离 (米)
+    private static final float PLAYER_CATCH_DISTANCE = 1.1f;// 抓住玩家的距离 (米)
     private boolean playerCaught = false;// 是否抓住玩家
     private float gameOverTimer = 0f;// 游戏结束计时器
     private static final float GAME_OVER_DELAY = 3.0f;// 游戏结束延迟 (秒)
