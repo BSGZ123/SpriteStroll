@@ -298,4 +298,38 @@ public class Enemy {
     public boolean isPlayerCaught() { return playerCaught; }
     public float getGameOverTimer() { return gameOverTimer; }
     public void setGameOverTimer(float gameOverTimer) { this.gameOverTimer = gameOverTimer; }
+
+    public void startAttackAnimation(String direction) {
+        enemyCurrentAnimation = "attack_" + direction;
+        enemyStateTime = 0f;
+    }
+
+    public void updateAnimation(float delta) {
+        Animation<TextureRegion> currentAnim = getCurrentAnimation();
+        if (currentAnim != null && currentAnim.isAnimationFinished(enemyStateTime)) {
+            enemyCurrentAnimation = "idle_" + enemyLastDirection;
+        }
+    }
+
+    public String getEnemyLastDirection() {
+        return enemyLastDirection;
+    }
+
+    private Animation<TextureRegion> getCurrentAnimation() {
+        return switch (enemyCurrentAnimation) {
+            case "walk_down" -> guanPinWalkDownAnimation;
+            case "walk_up" -> guanPinWalkUpAnimation;
+            case "walk_left" -> guanPinWalkLeftAnimation;
+            case "walk_right" -> guanPinWalkRightAnimation;
+            case "idle_down" -> guanPinIdleDownAnimation;
+            case "idle_up" -> guanPinIdleUpAnimation;
+            case "idle_left" -> guanPinIdleLeftAnimation;
+            case "idle_right" -> guanPinIdleRightAnimation;
+            case "attack_down" -> guanPinAttackDownAnimation;
+            case "attack_up" -> guanPinAttackUpAnimation;
+            case "attack_left" -> guanPinAttackLeftAnimation;
+            case "attack_right" -> guanPinAttackRightAnimation;
+            default -> guanPinIdleDownAnimation;
+        };
+    }
 }

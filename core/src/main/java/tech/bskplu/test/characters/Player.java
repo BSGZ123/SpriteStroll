@@ -307,4 +307,24 @@ public class Player {
     }
     public float getPlayerStateTime() { return playerStateTime; }
     public void setPlayerStateTime(float playerStateTime) { this.playerStateTime = playerStateTime; }
+
+    public void startAttackAnimation(String direction) {
+        currentAnimation = "attack_" + direction;
+        isAttacking = true;
+        playerStateTime = 0f;
+    }
+
+    public void updateAnimation(float delta) {
+        if (isAttacking) {
+            Animation<TextureRegion> currentAnim = getCurrentAnimation();
+            if (currentAnim != null && currentAnim.isAnimationFinished(playerStateTime)) {
+                isAttacking = false;
+                currentAnimation = "idle_" + lastDirection;
+            }
+        }
+    }
+
+    public String getLastDirection() {
+        return lastDirection;
+    }
 }
