@@ -48,9 +48,9 @@ public class BattleScreen implements Screen {
     private String battleMessage = "Enemy's turn";
 
     // Constants
-    private static final float PPM = 32f;
+    public static final float PPM = 32f;
     private static final float SCENE_WIDTH = 12f;// 场景宽度12米
-    private static final float SCENE_HEIGHT = 9f;// 场景高度9米
+    public static final float SCENE_HEIGHT = 9f;// 场景高度9米
     private static final float WALL_LENGTH = 3f;// 每段墙壁长度3米
     private static final float WALL_THICKNESS = 0.5f;// 墙壁厚度0.5米
 
@@ -270,7 +270,7 @@ public class BattleScreen implements Screen {
             playerHealth -= damage;
             if (playerHealth < 0) playerHealth = 0;
             battleMessage = "Enemy attacks for " + damage + "% damage!";
-            enemy.startAttackAnimation(enemy.getEnemyLastDirection()); // Requires startAttackAnimation in Enemy
+            enemy.startAttackAnimation(enemy.getEnemyLastDirection());
         } else {
             // Defend
             enemyDefending = true;

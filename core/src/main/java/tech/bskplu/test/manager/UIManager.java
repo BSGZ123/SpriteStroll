@@ -7,6 +7,8 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 
 import static tech.bskplu.test.TGameScreen.PIXELS_PER_METER;
+import static tech.bskplu.test.BattleScreen.PPM;
+import static tech.bskplu.test.BattleScreen.SCENE_HEIGHT;
 
 /**
  * @ClassName: UIManager
@@ -85,6 +87,27 @@ public class UIManager {
     public void drawMessage(SpriteBatch batch, String message, float x, float y) {
         batch.begin();
         messageFont.draw(batch, message, x, y);
+        batch.end();
+    }
+
+    /**
+     * 绘制对战场景UI
+     * @param batch
+     * @param playerHealth
+     * @param enemyHealth
+     * @param battleMessage
+     * @param isPlayerTurn
+     */
+    public void drawBattleUI(SpriteBatch batch, float playerHealth, float enemyHealth, String battleMessage, boolean isPlayerTurn) {
+        batch.begin();
+        font.draw(batch, "Player Health: " + String.format("%.0f%%", playerHealth), 10, SCENE_HEIGHT * PPM - 10);
+        font.draw(batch, "Enemy Health: " + String.format("%.0f%%", enemyHealth), 10, SCENE_HEIGHT * PPM - 30);
+        font.draw(batch, battleMessage, 10, SCENE_HEIGHT * PPM - 50);
+        if (isPlayerTurn) {
+            font.draw(batch, "1. Normal Attack (10%)", 10, 50);
+            font.draw(batch, "2. Double Strike (15% + Bleed)", 10, 30);
+            font.draw(batch, "3. Defend (50% less damage)", 10, 10);
+        }
         batch.end();
     }
 

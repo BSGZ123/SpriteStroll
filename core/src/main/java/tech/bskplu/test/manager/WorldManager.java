@@ -87,6 +87,55 @@ public class WorldManager {
         }
     }
 
+    /**
+     * 对战场景墙壁创建
+     * @param sceneWidth
+     * @param sceneHeight
+     * @param wallLength
+     * @param wallThickness
+     */
+    public void createBattleWalls(float sceneWidth, float sceneHeight, float wallLength, float wallThickness) {
+        BodyDef bodyDef = new BodyDef();
+        bodyDef.type = BodyDef.BodyType.StaticBody;
+        PolygonShape shape = new PolygonShape();
+        FixtureDef fixtureDef = new FixtureDef();
+        fixtureDef.shape = shape;
+        fixtureDef.friction = 0.4f;
+
+        int horizontalWallCount = (int) (sceneWidth / wallLength);
+        int verticalWallCount = (int) (sceneHeight / wallLength);
+
+        // 底部墙壁
+        for (int i = 0; i < horizontalWallCount; i++) {
+            bodyDef.position.set(wallLength / 2f + i * wallLength, wallThickness / 2f);
+            shape.setAsBox(wallLength / 2f, wallThickness / 2f);
+            world.createBody(bodyDef).createFixture(fixtureDef).setUserData("wall_bottom_" + i);
+        }
+
+        // 顶部墙壁
+        for (int i = 0; i < horizontalWallCount; i++) {
+            bodyDef.position.set(wallLength / 2f + i * wallLength, sceneHeight - wallThickness / 2f);
+            shape.setAsBox(wallLength / 2f, wallThickness / 2f);
+            world.createBody(bodyDef).createFixture(fixtureDef).setUserData("wall_top_" + i);
+        }
+
+        // 左侧墙壁
+        for (int i = 0; i < verticalWallCount; i++) {
+            bodyDef.position.set(wallThickness / 2f, wallLength / 2f + i * wallLength);
+            shape.setAsBox(wallThickness / 2f, wallLength / 2f);
+            world.createBody(bodyDef).createFixture(fixtureDef).setUserData("wall_left_" + i);
+        }
+
+        // 右侧墙壁
+        for (int i = 0; i < verticalWallCount; i++) {
+            bodyDef.position.set(sceneWidth - wallThickness / 2f, wallLength / 2f + i * wallLength);
+            shape.setAsBox(wallThickness / 2f, wallLength / 2f);
+            world.createBody(bodyDef).createFixture(fixtureDef).setUserData("wall_right_" + i);
+        }
+
+        shape.dispose();
+    }
+
     public World getWorld() { return world; }
     public Array<Body> getGroundBodies() { return groundBodies; }
 }
