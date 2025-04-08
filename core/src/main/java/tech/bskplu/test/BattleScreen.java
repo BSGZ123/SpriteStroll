@@ -16,6 +16,8 @@ import com.badlogic.gdx.physics.box2d.*;
 
 import tech.bskplu.test.characters.Enemy;
 import tech.bskplu.test.characters.Player;
+import tech.bskplu.test.manager.UIManager;
+import tech.bskplu.test.manager.WorldManager;
 
 /**
  * @ClassName: BattleScreen
@@ -32,6 +34,8 @@ public class BattleScreen implements Screen {
     private Box2DDebugRenderer debugRenderer;
     private Texture groundTexture;
     private BitmapFont font;
+    private WorldManager worldManager; // 新增
+    private UIManager uiManager; // 新增
 
     // 角色
     private Player player;
@@ -66,6 +70,8 @@ public class BattleScreen implements Screen {
         debugRenderer = new Box2DDebugRenderer();
         groundTexture = new Texture(Gdx.files.internal("ground.png"));
         font = new BitmapFont();
+        uiManager = new UIManager();
+        //worldManager.createBattleWalls(SCENE_WIDTH, SCENE_HEIGHT, WALL_LENGTH, WALL_THICKNESS);
         createWalls();
         initializeCharacters();
     }
@@ -194,17 +200,10 @@ public class BattleScreen implements Screen {
             float enemyY = enemy.getEnemyBody().getPosition().y * PPM - enemyFrame.getRegionHeight() / 2f;
             batch.draw(enemyFrame, enemyX, enemyY);
         }
-
-        // 绘制UI
-        font.draw(batch, "Player Health: " + String.format("%.0f%%", playerHealth), 10, SCENE_HEIGHT * PPM - 10);
-        font.draw(batch, "Enemy Health: " + String.format("%.0f%%", enemyHealth), 10, SCENE_HEIGHT * PPM - 30);
-        font.draw(batch, battleMessage, 10, SCENE_HEIGHT * PPM - 50);
-        if (isPlayerTurn) {
-            font.draw(batch, "1. Normal Attack (10%)", 10, 50);
-            font.draw(batch, "2. Double Strike (15% + Bleed)", 10, 30);
-            font.draw(batch, "3. Defend (50% less damage)", 10, 10);
-        }
         batch.end();
+
+        // 使用UIManager绘制UI
+        uiManager.drawBattleUI(batch, playerHealth, enemyHealth, battleMessage, isPlayerTurn);
 
         // 处理玩家输入
         if (isPlayerTurn) {
@@ -261,7 +260,6 @@ public class BattleScreen implements Screen {
     // 敌人行动
     private void performEnemyAction() {
         if (MathUtils.randomBoolean()) {
-            // Normal Attack
             float damage = 10f;
             if (playerDefending) {
                 damage *= 0.5f;
@@ -272,7 +270,6 @@ public class BattleScreen implements Screen {
             battleMessage = "Enemy attacks for " + damage + "% damage!";
             enemy.startAttackAnimation(enemy.getEnemyLastDirection());
         } else {
-            // Defend
             enemyDefending = true;
             battleMessage = "Enemy defends!";
         }
@@ -335,5 +332,6 @@ public class BattleScreen implements Screen {
         world.dispose();
         debugRenderer.dispose();
         font.dispose();
+        uiManager.dispose();
     }
 }
