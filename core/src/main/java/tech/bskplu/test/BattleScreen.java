@@ -71,51 +71,9 @@ public class BattleScreen implements Screen {
         groundTexture = new Texture(Gdx.files.internal("ground.png"));
         font = new BitmapFont();
         uiManager = new UIManager();
-        //worldManager.createBattleWalls(SCENE_WIDTH, SCENE_HEIGHT, WALL_LENGTH, WALL_THICKNESS);
-        createWalls();
+        worldManager=new WorldManager();
+        worldManager.createBattleWalls(SCENE_WIDTH, SCENE_HEIGHT, WALL_LENGTH, WALL_THICKNESS);
         initializeCharacters();
-    }
-
-    private void createWalls() {
-        BodyDef bodyDef = new BodyDef();
-        bodyDef.type = BodyDef.BodyType.StaticBody;
-        PolygonShape shape = new PolygonShape();
-        FixtureDef fixtureDef = new FixtureDef();
-        fixtureDef.shape = shape;
-        fixtureDef.friction = 0.4f;
-
-        int horizontalWallCount = (int) (SCENE_WIDTH / WALL_LENGTH);
-        int verticalWallCount = (int) (SCENE_HEIGHT / WALL_LENGTH);
-
-        // 底部墙壁
-        for (int i = 0; i < horizontalWallCount; i++) {
-            bodyDef.position.set(WALL_LENGTH / 2f + i * WALL_LENGTH, WALL_THICKNESS / 2f);
-            shape.setAsBox(WALL_LENGTH / 2f, WALL_THICKNESS / 2f);
-            world.createBody(bodyDef).createFixture(fixtureDef).setUserData("wall_bottom_" + i);
-        }
-
-        // 顶部墙壁
-        for (int i = 0; i < horizontalWallCount; i++) {
-            bodyDef.position.set(WALL_LENGTH / 2f + i * WALL_LENGTH, SCENE_HEIGHT - WALL_THICKNESS / 2f);
-            shape.setAsBox(WALL_LENGTH / 2f, WALL_THICKNESS / 2f);
-            world.createBody(bodyDef).createFixture(fixtureDef).setUserData("wall_top_" + i);
-        }
-
-        // 左侧墙壁
-        for (int i = 0; i < verticalWallCount; i++) {
-            bodyDef.position.set(WALL_THICKNESS / 2f, WALL_LENGTH / 2f + i * WALL_LENGTH);
-            shape.setAsBox(WALL_THICKNESS / 2f, WALL_LENGTH / 2f);
-            world.createBody(bodyDef).createFixture(fixtureDef).setUserData("wall_left_" + i);
-        }
-
-        // 右侧墙壁
-        for (int i = 0; i < verticalWallCount; i++) {
-            bodyDef.position.set(SCENE_WIDTH - WALL_THICKNESS / 2f, WALL_LENGTH / 2f + i * WALL_LENGTH);
-            shape.setAsBox(WALL_THICKNESS / 2f, WALL_LENGTH / 2f);
-            world.createBody(bodyDef).createFixture(fixtureDef).setUserData("wall_right_" + i);
-        }
-
-        shape.dispose();
     }
 
     private void initializeCharacters() {
