@@ -1,14 +1,15 @@
 package tech.bskplu.test.characters;
+
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.ai.pfa.DefaultGraphPath;
+import com.badlogic.gdx.ai.pfa.GraphPath;
+import com.badlogic.gdx.ai.pfa.indexed.IndexedAStarPathFinder;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
-import com.badlogic.gdx.ai.pfa.DefaultGraphPath;
-import com.badlogic.gdx.ai.pfa.GraphPath;
-import com.badlogic.gdx.ai.pfa.indexed.IndexedAStarPathFinder;
 import tech.bskplu.test.ai.GameTiledGraph;
 import tech.bskplu.test.ai.GameTiledHeuristic;
 import tech.bskplu.test.ai.GameTiledNode;

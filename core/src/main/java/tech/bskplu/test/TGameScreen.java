@@ -1,4 +1,5 @@
 package tech.bskplu.test;
+
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -14,8 +15,11 @@ import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import tech.bskplu.test.ai.GameTiledGraph;
-import tech.bskplu.test.characters.*;
-import tech.bskplu.test.manager.*;
+import tech.bskplu.test.characters.Enemy;
+import tech.bskplu.test.characters.Player;
+import tech.bskplu.test.manager.AIManager;
+import tech.bskplu.test.manager.UIManager;
+import tech.bskplu.test.manager.WorldManager;
 
 
 /**
