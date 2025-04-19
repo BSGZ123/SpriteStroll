@@ -20,7 +20,7 @@ import tech.bskplu.test.ai.GameTiledNode;
  * @Date 2025/4/3
  * @Version 1.1
  */
-public class Enemy {
+public class Enemy extends Character{
     private Body enemyBody;// 敌人的物理身体
     private Texture guanPinMovTexture;// 敌人移动纹理
     private Texture guanPinAtkTexture;// 敌人攻击纹理
@@ -60,9 +60,15 @@ public class Enemy {
      * @param pathFinder A* 寻路器
      */
     public Enemy(World world, GameTiledGraph tiledGraph, IndexedAStarPathFinder<GameTiledNode> pathFinder) {
+        super(world);
         this.tiledGraph = tiledGraph;
         this.pathFinder = pathFinder;
         enemyPath = new DefaultGraphPath<>();
+        float margin = 2.0f;
+        float randomX = MathUtils.random(margin, 800 / 32f - margin);
+        float randomY = MathUtils.random(margin, 600 / 32f - margin);
+        body.setTransform(randomX, randomY, 0);
+        body.getFixtureList().get(0).setUserData("enemy");
         createGuanPin(world);
     }
 

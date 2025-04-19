@@ -1,5 +1,7 @@
 package tech.bskplu.test.skills;
 
+import tech.bskplu.test.characters.Character;
+
 /**
  * @InterfaceName: Effect
  * @Description: 技能效果
@@ -9,5 +11,6 @@ package tech.bskplu.test.skills;
  */
 public interface Effect {
     void apply(Character character);
+
     boolean isExpired();
 }

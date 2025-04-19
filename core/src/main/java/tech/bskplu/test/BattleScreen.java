@@ -33,8 +33,8 @@ public class BattleScreen implements Screen {
     private Box2DDebugRenderer debugRenderer;
     private Texture groundTexture;
     private BitmapFont font;
-    private WorldManager worldManager; // 新增
-    private UIManager uiManager; // 新增
+    private WorldManager worldManager;
+    private UIManager uiManager;
 
     // 角色
     private Player player;
@@ -56,6 +56,9 @@ public class BattleScreen implements Screen {
     public static final float SCENE_HEIGHT = 9f;// 场景高度9米
     private static final float WALL_LENGTH = 3f;// 每段墙壁长度3米
     private static final float WALL_THICKNESS = 0.5f;// 墙壁厚度0.5米
+
+    private enum Turn { PLAYER, ENEMY }
+    private Turn currentTurn = Turn.PLAYER;
 
     public BattleScreen(Game game, Player player, Enemy enemy) {
         this.game = game;
@@ -163,18 +166,52 @@ public class BattleScreen implements Screen {
         uiManager.drawBattleUI(batch, playerHealth, enemyHealth, battleMessage, isPlayerTurn);
 
         // 处理玩家输入
-        if (isPlayerTurn) {
-            if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1)) {
-                performPlayerNormalAttack();
-            } else if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_2)) {
-                performPlayerDoubleStrike();
-            } else if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_3)) {
-                performPlayerDefend();
-            }
+//        if (isPlayerTurn) {
+//            if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1)) {
+//                performPlayerNormalAttack();
+//            } else if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_2)) {
+//                performPlayerDoubleStrike();
+//            } else if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_3)) {
+//                performPlayerDefend();
+//            }
+//        }
+        if (currentTurn == Turn.PLAYER) {
+            playerTurn();
+        } else {
+            enemyTurn();
+        }
+
+        player.applyEffects();
+        enemy.applyEffects();
+
+        if (player.getHealth() <= 0 || enemy.getHealth() <= 0) {
+            game.setScreen(new StartScreen(game));
         }
 
         // 可选：渲染物理调试信息
         // debugRenderer.render(world, camera.combined.cpy().scale(PPM, PPM, 0));
+    }
+
+    private void playerTurn() {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_1)) {
+            System.out.println("Player chooses Attack");
+            player.useSkill(0, enemy); // Attack
+            currentTurn = Turn.ENEMY;
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_2)) {
+            System.out.println("Player chooses Defend");
+            player.useSkill(1, player); // Defend
+            currentTurn = Turn.ENEMY;
+        } else if (Gdx.input.isKeyJustPressed(Input.Keys.NUM_3)) {
+            System.out.println("Player chooses Double Strike");
+            player.useSkill(2, enemy); // Double Strike
+            currentTurn = Turn.ENEMY;
+        }
+    }
+
+    private void enemyTurn() {
+        int skillIndex = MathUtils.random(enemy.getSkills().size() - 1);
+        enemy.useSkill(skillIndex, player);
+        currentTurn = Turn.PLAYER;
     }
 
     // 玩家行动

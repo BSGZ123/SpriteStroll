@@ -1,4 +1,5 @@
 package tech.bskplu.test.skills;
+import tech.bskplu.test.characters.Character;
 
 /**
  * @ClassName: BleedEffect
@@ -8,13 +9,22 @@ package tech.bskplu.test.skills;
  * @Version 1.1
  */
 public class BleedEffect implements Effect{
+    private int duration;
+    private int damagePerTurn;
+
+    public BleedEffect(int duration, int damagePerTurn) {
+        this.duration = duration;
+        this.damagePerTurn = damagePerTurn;
+    }
+
     @Override
     public void apply(Character character) {
-
+        character.takeDamage(damagePerTurn);
+        duration--;
     }
 
     @Override
     public boolean isExpired() {
-        return false;
+        return duration <= 0;
     }
 }

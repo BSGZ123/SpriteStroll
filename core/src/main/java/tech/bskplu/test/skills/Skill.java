@@ -1,5 +1,7 @@
 package tech.bskplu.test.skills;
 
+import tech.bskplu.test.characters.Character;
+
 /**
  * @InterfaceName: Skill
  * @Description: 技能接口
@@ -9,5 +11,6 @@ package tech.bskplu.test.skills;
  */
 public interface Skill {
     void use(Character user, Character target);
+
     String getName();
 }

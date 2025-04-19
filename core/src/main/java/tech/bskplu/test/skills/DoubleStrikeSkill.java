@@ -1,4 +1,5 @@
 package tech.bskplu.test.skills;
+import tech.bskplu.test.characters.Character;
 
 /**
  * @ClassName: DoubleStrikeSkill
@@ -10,11 +11,13 @@ package tech.bskplu.test.skills;
 public class DoubleStrikeSkill implements Skill{
     @Override
     public void use(Character user, Character target) {
-
+        int damage = user.getAttack() * 2; // Double damage
+        target.takeDamage(damage);
+        target.applyEffect(new BleedEffect(3, 5));
     }
 
     @Override
     public String getName() {
-        return null;
+        return "Double Strike";
     }
 }

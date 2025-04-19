@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import tech.bskplu.test.skills.DoubleStrikeSkill;
 
 import java.util.Arrays;
 /**
@@ -16,7 +17,7 @@ import java.util.Arrays;
  * @Date 2025/4/2
  * @Version 1.1
  */
-public class Player {
+public class Player extends Character{
     private Body playerBody;// 玩家的物理身体
     private Texture playerTexture;// 猫猫角色纹理
     private Animation<TextureRegion> playerIdleAnimation;
@@ -49,8 +50,12 @@ public class Player {
      * @param world Box2D 物理世界
      */
     public Player(World world) {
+        super(world);
+        body.setTransform(800 / 32f / 2f, 600 / 32f / 2f, 0);
+        body.getFixtureList().get(0).setUserData("player");
         createPlayer(world);
         createSamurai();
+        addSkill(new DoubleStrikeSkill());
     }
 
     /**
